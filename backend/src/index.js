@@ -9,9 +9,9 @@ const problemRouter = require("./routes/problemCreator");
 const submitRouter = require("./routes/submit")
 const aiRouter = require("./routes/aiChatting")
 const videoRouter = require("./routes/videoCreator");
+const mockRouter = require("./routes/mockInterview");
 const cors = require('cors')
 
-// console.log("Hello")
 
 app.use(cors({
     origin: 'http://localhost:5173',
@@ -26,6 +26,7 @@ app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 app.use('/ai',aiRouter);
 app.use("/video",videoRouter);
+app.use('/mock', mockRouter);
 
 
 const InitalizeConnection = async ()=>{
