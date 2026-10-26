@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 import axiosClient from "../utils/axiosClient";
 import SubmissionHistory from "../components/SubmissionHistory";
 import ChatAi from '../components/ChatAi';
+import MockInterview from '../components/MockInterview';
 import Editorial from '../components/Editorial';
 
 // Helper to normalize language names between UI and DB
@@ -199,6 +200,7 @@ const ProblemPage = () => {
           <button className={`tab ${activeLeftTab === 'solutions' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('solutions')}>Solutions</button>
           <button className={`tab ${activeLeftTab === 'submissions' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('submissions')}>Submissions</button>
           <button className={`tab ${activeLeftTab === 'chatAI' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('chatAI')}>ChatAI</button>
+          <button className={`tab ${activeLeftTab === 'mockInterview' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('mockInterview')}>Mock Interview</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -316,6 +318,12 @@ const ProblemPage = () => {
                   </div>
                 </div>
               )}
+              {activeLeftTab === 'mockInterview' && (
+              <div>
+                <h2 className="text-xl font-bold mb-4">AI Mock Interview</h2>
+                  <MockInterview problem={problem} />
+              </div>
+            )}
             </>
           )}
         </div>
