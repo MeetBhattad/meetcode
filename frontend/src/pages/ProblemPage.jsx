@@ -321,7 +321,7 @@ const ProblemPage = () => {
               {activeLeftTab === 'mockInterview' && (
               <div>
                 <h2 className="text-xl font-bold mb-4">AI Mock Interview</h2>
-                  <MockInterview problem={problem} />
+                  <MockInterview problem={problem} language={selectedLanguage} />
               </div>
             )}
             </>

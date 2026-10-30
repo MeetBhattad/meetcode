@@ -11,51 +11,84 @@ const MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 // ─────────────────────────────────────────────────────────────
-// Interviewer persona — this is the heart of the feature
+// Post-processor: force ONE question, max two sentences
+// ─────────────────────────────────────────────────────────────
+const forceConciseness = (raw) => {
+  if (!raw) return '';
+  let text = raw.trim();
+
+  // Strip markdown artifacts the model sometimes adds
+  text = text.replace(/^[*#>\s]+/gm, '').replace(/\n+/g, ' ').trim();
+
+  // If multiple questions, keep only the first
+  const qIdx = text.indexOf('?');
+  if (qIdx !== -1) {
+    text = text.slice(0, qIdx + 1);
+  }
+
+  // If multiple sentences ending in ".", keep the first two max
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (sentences && sentences.length > 2) {
+    text = sentences.slice(0, 2).join(' ').trim();
+    // Re-add a question mark at the end if the truncation removed it
+    if (!/[?.!]$/.test(text)) text += '?';
+  }
+
+  // Hard cap on words
+  const words = text.split(/\s+/);
+  if (words.length > 45) {
+    text = words.slice(0, 45).join(' ');
+    if (!/[?.!]$/.test(text)) text += '…';
+  }
+
+  return text.trim();
+};
+
+// ─────────────────────────────────────────────────────────────
+// Interviewer persona with few-shot examples
 // ─────────────────────────────────────────────────────────────
 const buildSystemPrompt = (problem, language) => `
-You are a Senior Software Engineer at Meta conducting a live technical interview. You are interviewing a candidate on the problem below. The candidate will write code in ${language}.
+You are a Senior Software Engineer at Meta conducting a live technical interview.
 
-## PROBLEM CONTEXT
+## PROBLEM
 Title: ${problem.title}
 Difficulty: ${problem.difficulty}
 Description: ${problem.description}
 Examples: ${JSON.stringify(problem.visibleTestCases)}
+Candidate's language: ${language}
 
-## YOUR ROLE
-You are the INTERVIEWER. You are evaluating the candidate on:
-1. Problem understanding (do they ask clarifying questions?)
-2. Approach articulation (can they explain before coding?)
-3. Coding skill (clean, correct code)
-4. Complexity awareness (time AND space)
-5. Edge case handling (empty input, duplicates, negatives)
+## ABSOLUTE RULES (BREAKING THESE IS A CRITICAL FAILURE)
+1. Your reply MUST be ONE sentence, ending in a question mark.
+2. Ask ONE question per turn. NEVER ask two. NEVER stack requests.
+3. NEVER write code. NEVER hint at a specific algorithm. NEVER reveal the solution.
+4. NEVER say "great", "good", "excellent", "nice", "perfect" — real FAANG interviewers are neutral.
+5. NEVER summarize what the candidate just said.
+6. NEVER ask the candidate to write code until they have stated: (a) brute-force approach, (b) its time complexity, (c) the optimization idea, (d) its time + space complexity. Only then invite them to code.
+7. If the candidate asks for the code: refuse in one sentence and ask where they're stuck.
 
-## CRITICAL RULES
-1. NEVER write code for the candidate. NEVER reveal the solution. If they ask for the answer, decline and offer a hint instead.
-2. Keep responses SHORT — 1-3 sentences. You're talking, not lecturing.
-3. Ask ONE question at a time. Never stack multiple questions.
-4. Probe based on what they actually say. If they say "I'll use a hash map," ask "why a hash map over a sorted array?" If they say "O(n)", ask "what about space complexity?"
-5. Push back on weak reasoning. If they claim something wrong, say "Are you sure about that?" — don't just accept it.
-6. If they're stuck or silent, offer a small nudge — not the answer.
-7. Do NOT say "Great job!", "Excellent!", "Nice!" — real FAANG interviewers are neutral. Say "Okay" or "Let's continue."
-8. Do NOT summarize what they said back to them. Move forward.
-9. Never break character. Never mention you are an AI. Never say "as an AI."
+## GOOD RESPONSE EXAMPLES (imitate this style)
+- Candidate: "I'd use two nested loops." → You: "What time complexity does that give you?"
+- Candidate: "O(n squared)." → You: "Can you think of a way to bring that down to linear time?"
+- Candidate: "I'd use a hash map." → You: "What are you storing in the hash map?"
+- Candidate: "I'd store the complement." → You: "What's the space complexity of that approach?"
+- Candidate: "Can you just show me the code?" → You: "I can't, but walk me through where exactly you're stuck."
+- Candidate: "I'm done." → You: "Walk me through your code on the first example line by line."
 
-## FLOW
-- Opening: Ask them to explain their approach BEFORE coding. Mention brute force first, then ask about optimization.
-- Middle: React to what they say. Probe edge cases, complexity, alternative approaches. If they go quiet, ask "What are you thinking?"
-- If they finish coding: Ask them to walk through a small example manually. Ask about edge cases.
-- If they seem done: Ask "Are you confident in this solution? Is there anything you'd change?"
+## BAD RESPONSE EXAMPLES (never imitate these)
+- ❌ "Great approach! Now can you think about optimization? Also, what's the space complexity?"
+- ❌ "That's a solid start. How would your solution handle duplicates or negative numbers? Once you figure that out, go ahead and write the code."
+- ❌ "I like that. Let's move on. Please implement the function in Python and show me your complete solution."
+- ❌ "Your reasoning is correct. Now, before you code, explain your outline step by step, then tell me about edge cases, then write the function."
 
 ## TONE
-Professional, neutral, probing — like a real FAANG interviewer. Terse. Not warm, not cold. Never sycophantic.
+Professional, terse, neutral. You are not the candidate's coach — you are evaluating them. One question, then stop. Wait for their answer.
 
-## OUTPUT FORMAT
-Plain conversational text. No markdown headers. No bullet lists. 1-3 sentences max.
+## OUTPUT
+Plain text. No markdown. No bullet lists. One sentence. Ends with "?".
 `;
 
 // ─────────────────────────────────────────────────────────────
-// LLM call with model fallback + retry
+// LLM call with model fallback + post-processing
 // ─────────────────────────────────────────────────────────────
 const callInterviewer = async (systemPrompt, conversationMessages) => {
   const mapped = conversationMessages.map(m => ({
@@ -70,11 +103,11 @@ const callInterviewer = async (systemPrompt, conversationMessages) => {
         const completion = await groq.chat.completions.create({
           model,
           messages: [{ role: 'system', content: systemPrompt }, ...mapped],
-          temperature: 0.7,
-          max_tokens: 200,
+          temperature: 0.4,          // lower than before — more disciplined
+          max_tokens: 80,            // hard cap: no room for paragraphs
         });
-        const text = completion.choices?.[0]?.message?.content?.trim();
-        if (text) return text;
+        const raw = completion.choices?.[0]?.message?.content?.trim();
+        if (raw) return forceConciseness(raw);
       } catch (err) {
         lastErr = err;
         if (err.status === 429 || err.status === 503) await sleep(3000);
@@ -96,7 +129,6 @@ const startSession = async (req, res) => {
     const problem = await Problem.findById(problemId);
     if (!problem) return res.status(404).json({ error: 'Problem not found' });
 
-    // Resume existing in-progress session for the same problem
     const existing = await MockSession.findOne({
       userId, problemId, status: 'in-progress',
     }).sort({ startedAt: -1 });
@@ -117,16 +149,8 @@ const startSession = async (req, res) => {
       status: 'in-progress',
     });
 
-    const systemPrompt = buildSystemPrompt(problem, session.language);
-
-    let openingText;
-    try {
-      openingText = await callInterviewer(systemPrompt, [
-        { role: 'user', text: 'Begin the interview with your opening question.' },
-      ]);
-    } catch {
-      openingText = "Let's get started. Take a look at the problem. Before you write any code, walk me through your initial approach.";
-    }
+    // Fixed, deterministic opening — no LLM needed for this
+    const openingText = `Alright, let's get started. Before you write any code, walk me through your approach for ${problem.title}.`;
 
     session.messages.push({ role: 'interviewer', text: openingText });
     await session.save();
@@ -172,7 +196,7 @@ const sendMessage = async (req, res) => {
     try {
       replyText = await callInterviewer(systemPrompt, session.messages);
     } catch {
-      replyText = "Let's continue. What's your next step?";
+      replyText = "What's your next step?";
     }
 
     session.messages.push({ role: 'interviewer', text: replyText });
