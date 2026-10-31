@@ -50,11 +50,13 @@ function Homepage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   
-  const [filters, setFilters] = useState({
-    difficulty: 'all',
-    tag: 'all',
-    status: 'all' 
-  });
+ const [filters, setFilters] = useState({
+  difficulty: 'all',
+  tag: 'all',
+  status: 'all',
+  company: 'all',
+});
+const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -89,6 +91,17 @@ function Homepage() {
 
     fetchProblems();
     if (user) fetchSolvedProblems();
+
+    const fetchCompanies = async () => {
+    try {
+      const { data } = await axiosClient.get('/company/list');
+      setCompanies(data);
+    } catch (err) {
+      console.error('Failed to fetch companies:', err);
+    }
+  };
+  fetchCompanies();
+
   }, [user]);
 
   const handleLogout = () => {
@@ -100,10 +113,15 @@ function Homepage() {
     const difficultyMatch = filters.difficulty === 'all' || problem.difficulty === filters.difficulty;
     const tagMatch = filters.tag === 'all' || problem.tags === filters.tag;
     const isSolved = solvedProblems.some(sp => sp._id === problem._id);
+     const companyMatch =
+    filters.company === 'all' ||
+    (problem.companies || []).some(
+      (c) => c.name === filters.company && c.timeframe === 'all'
+    );
     const statusMatch = filters.status === 'all' || 
                       (filters.status === 'solved' && isSolved) ||
                       (filters.status === 'unsolved' && !isSolved);
-    return difficultyMatch && tagMatch && statusMatch;
+    return difficultyMatch && tagMatch && companyMatch && statusMatch;
   });
 
   const getDifficultyStyle = (difficulty) => {
@@ -227,6 +245,19 @@ function Homepage() {
               <option value="hard">Hard</option>
             </select>
 
+            <select
+  className="h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all cursor-pointer"
+  value={filters.company}
+  onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+>
+  <option value="all">All Companies</option>
+  {companies.map((c) => (
+    <option key={c.name} value={c.name}>
+      {c.name} ({c.count})
+    </option>
+  ))}
+</select>
+
             <select 
               className="h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all cursor-pointer"
               value={filters.tag}
@@ -291,13 +322,17 @@ function Homepage() {
                     </div>
                     
                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border ${getDifficultyStyle(problem.difficulty)}`}>
-                        {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
-                      </span>
-                      <span className="hidden sm:inline-block px-2.5 py-1 rounded-md text-[11px] font-medium text-white/50 bg-white/[0.03] border border-white/[0.06]">
-                        {problem.tags.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                    </div>
+  <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border ${getDifficultyStyle(problem.difficulty)}`}>
+    {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
+  </span>
+  <span className="hidden sm:inline-block px-2.5 py-1 rounded-md text-[11px] font-medium text-white/50 bg-white/[0.03] border border-white/[0.06]">
+    {problem.tags.replace(/([A-Z])/g, ' $1').trim()}
+  </span>
+  <CompanyBadges
+    companies={problem.companies}
+    selectedCompany={filters.company}
+  />
+</div>
                   </NavLink>
                 );
               })
@@ -314,3 +349,74 @@ function Homepage() {
 }
 
 export default Homepage;
+
+function CompanyBadges({ companies = [], selectedCompany = 'all' }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const all = (companies || []).filter((c) => c.timeframe === 'all');
+  if (all.length === 0) return null;
+
+  // Sort by frequency desc
+  const sorted = [...all].sort((a, b) => b.frequency - a.frequency);
+
+  // If user is filtering by a specific company, that one comes first
+  const ordered =
+    selectedCompany && selectedCompany !== 'all'
+      ? [
+          ...sorted.filter((c) => c.name === selectedCompany),
+          ...sorted.filter((c) => c.name !== selectedCompany),
+        ]
+      : sorted;
+
+  // When filtering: show selected + "+N";  when not filtering: show top 2 + "+N"
+  const alwaysShow = selectedCompany !== 'all' ? 1 : 2;
+  const visible = expanded ? ordered : ordered.slice(0, alwaysShow);
+  const hidden = ordered.length - visible.length;
+
+  return (
+    <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+      {visible.map((c) => {
+        const isSelected = c.name === selectedCompany;
+        return (
+          <span
+            key={c.name}
+            className={`px-2 py-0.5 rounded-md text-[10.5px] font-medium border transition-colors ${
+              isSelected
+                ? 'text-violet-200 bg-violet-500/20 border-violet-500/40'
+                : 'text-violet-300/80 bg-violet-500/10 border-violet-500/20'
+            }`}
+            title={`${c.frequency}% frequency`}
+          >
+            {c.name}
+          </span>
+        );
+      })}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded(true);
+          }}
+          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] hover:text-white hover:bg-white/[0.08] transition-colors"
+        >
+          +{hidden}
+        </button>
+      )}
+      {expanded && ordered.length > alwaysShow && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded(false);
+          }}
+          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/40 hover:text-white transition-colors"
+        >
+          less
+        </button>
+      )}
+    </div>
+  );
+}

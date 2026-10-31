@@ -208,14 +208,14 @@ const ProblemPage = () => {
             <>
               {activeLeftTab === 'description' && (
                 <div>
-                  <div className="flex items-center gap-4 mb-6">
-                    <h1 className="text-2xl font-bold">{problem.title}</h1>
-                    <div className={`badge badge-outline ${getDifficultyColor(problem.difficulty)}`}>
-                      {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
-                    </div>
-                    <div className="badge badge-primary">{problem.tags}</div>
-                  </div>
-
+                  <div className="flex items-center gap-4 mb-3 flex-wrap">
+  <h1 className="text-2xl font-bold">{problem.title}</h1>
+  <div className={`badge badge-outline ${getDifficultyColor(problem.difficulty)}`}>
+    {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
+  </div>
+  <div className="badge badge-primary">{problem.tags}</div>
+</div>
+<ProblemCompanyBadges companies={problem.companies} />
                   <div className="prose max-w-none">
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {problem.description}
@@ -591,3 +591,49 @@ const ProblemPage = () => {
 };
 
 export default ProblemPage;
+
+function ProblemCompanyBadges({ companies = [] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const all = (companies || [])
+    .filter((c) => c.timeframe === 'all')
+    .sort((a, b) => b.frequency - a.frequency);
+
+  if (all.length === 0) return null;
+
+  const visible = expanded ? all : all.slice(0, 5);
+  const hidden = all.length - visible.length;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mb-6">
+      <span className="text-[11px] text-white/40 mr-0.5">Asked at:</span>
+      {visible.map((c) => (
+        <span
+          key={c.name}
+          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20"
+          title={`${c.frequency}% frequency · ${(c.acceptanceRate * 100).toFixed(1)}% acceptance`}
+        >
+          🏢 {c.name} · {c.frequency.toFixed(0)}%
+        </span>
+      ))}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] hover:text-white hover:bg-white/[0.08] transition-colors"
+        >
+          +{hidden} more
+        </button>
+      )}
+      {expanded && all.length > 5 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/40 hover:text-white transition-colors"
+        >
+          show less
+        </button>
+      )}
+    </div>
+  );
+}

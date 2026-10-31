@@ -98,12 +98,19 @@ const problemSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref:'user',
         required:true
-    }
+    },
+    companies: [
+  {
+    name: { type: String, required: true },
+    frequency: { type: Number, default: 0 },
+    timeframe: { type: String, enum: ['30d', '3m', '6m', 'older', 'all'], default: 'all' },
+    acceptanceRate: { type: Number, default: 0 },
+  },
+],
 })
 
 
 const Problem = mongoose.model('problem',problemSchema);
+problemSchema.index({ 'companies.name': 1 });
 
 module.exports = Problem;
-
-
