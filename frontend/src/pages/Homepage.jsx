@@ -3,7 +3,7 @@ import { NavLink } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
-import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
 
 const styles = `
   @keyframes fade-up {
@@ -173,6 +173,13 @@ function Homepage() {
                       <Settings size={14} /> Admin Panel
                     </NavLink>
                   )}
+                  <NavLink 
+  to="/dashboard" 
+  onClick={() => setDropdownOpen(false)}
+  className="flex items-center gap-2 px-3 py-2 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors"
+>
+  <TrendingUp size={14} /> Dashboard
+</NavLink>
                   
                   <button 
                     onClick={handleLogout}

@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from "./authSlice";
 import { useEffect } from "react";
 import AdminPanel from "./components/AdminPanel";
+import Dashboard from "./pages/Dashboard";
 import ProblemPage from "./pages/ProblemPage"
 import Admin from "./pages/Admin";
 import AdminVideo from "./components/AdminVideo"
@@ -34,6 +35,7 @@ function App(){
   <>
     <Routes>
       <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
+      <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />} />
       <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
       <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />

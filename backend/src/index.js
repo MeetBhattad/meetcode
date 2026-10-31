@@ -10,6 +10,7 @@ const submitRouter = require("./routes/submit")
 const aiRouter = require("./routes/aiChatting")
 const videoRouter = require("./routes/videoCreator");
 const mockRouter = require("./routes/mockInterview");
+const dashboardRouter = require("./routes/dashboard");
 const cors = require('cors')
 
 
@@ -27,6 +28,7 @@ app.use('/submission',submitRouter);
 app.use('/ai',aiRouter);
 app.use("/video",videoRouter);
 app.use('/mock', mockRouter);
+app.use('/dashboard', dashboardRouter);
 
 
 const InitalizeConnection = async ()=>{
