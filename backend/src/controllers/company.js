@@ -1,4 +1,5 @@
 const Problem = require('../models/problem');
+const User = require('../models/user');
 
 // ── GET /company/list ───────────────────────────────────────
 const listCompanies = async (req, res) => {
@@ -17,11 +18,15 @@ const listCompanies = async (req, res) => {
   }
 };
 
-// ── GET /company/:name/problems ──────────────────────────────
+// ── GET /company/:name/problems ─────────────────────────────
 const problemsByCompany = async (req, res) => {
   try {
+    const userId = req.result._id;
     const { name } = req.params;
     const { timeframe = 'all' } = req.query;
+
+    const user = await User.findById(userId);
+    const solvedSet = new Set((user.problemSolved || []).map((id) => id.toString()));
 
     const problems = await Problem.aggregate([
       { $unwind: '$companies' },
@@ -39,7 +44,31 @@ const problemsByCompany = async (req, res) => {
       },
     ]);
 
-    res.status(200).json(problems);
+    const enriched = problems.map((p) => ({
+      ...p,
+      isSolved: solvedSet.has(p._id.toString()),
+    }));
+
+    const stats = {
+      total: enriched.length,
+      solved: enriched.filter((p) => p.isSolved).length,
+      difficulty: {
+        easy: {
+          total: enriched.filter((p) => p.difficulty === 'easy').length,
+          solved: enriched.filter((p) => p.difficulty === 'easy' && p.isSolved).length,
+        },
+        medium: {
+          total: enriched.filter((p) => p.difficulty === 'medium').length,
+          solved: enriched.filter((p) => p.difficulty === 'medium' && p.isSolved).length,
+        },
+        hard: {
+          total: enriched.filter((p) => p.difficulty === 'hard').length,
+          solved: enriched.filter((p) => p.difficulty === 'hard' && p.isSolved).length,
+        },
+      },
+    };
+
+    res.status(200).json({ company: name, stats, problems: enriched });
   } catch (err) {
     console.error('problemsByCompany error:', err);
     res.status(500).json({ error: 'Failed to fetch company problems' });

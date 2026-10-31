@@ -1,2 +1,20 @@
 @import "tailwindcss";
 @plugin "daisyui";
+/* Force all native form controls into dark mode — fixes invisible dropdowns */
+select,
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #111115;
+  color: #ffffff;
+  padding: 8px;
+}
+
+select option:checked {
+  background: linear-gradient(#7c3aed, #7c3aed);
+  color: white;
+}

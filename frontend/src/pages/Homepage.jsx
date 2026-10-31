@@ -3,7 +3,7 @@ import { NavLink } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
-import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal, TrendingUp, ArrowRight, Building2 } from 'lucide-react';
 
 const styles = `
   @keyframes fade-up {
@@ -284,6 +284,27 @@ const [companies, setCompanies] = useState([]);
               <option value="bitManipulation">Bit Manipulation</option>
             </select>
           </div>
+          {filters.company !== 'all' && (
+  <div className="fade-up mb-4 flex items-center justify-between rounded-xl border border-violet-500/20 bg-violet-500/[0.06] px-4 py-3">
+    <div className="flex items-center gap-2.5">
+      <Building2 size={16} className="text-violet-400" />
+      <div>
+        <p className="text-[13px] text-white/80">
+          Preparing for <strong className="text-white">{filters.company}</strong>?
+        </p>
+        <p className="text-[11px] text-white/40">
+          View a dedicated prep page with progress tracking and stats.
+        </p>
+      </div>
+    </div>
+    <NavLink
+      to={`/company/${encodeURIComponent(filters.company)}`}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[12px] font-medium transition-colors flex-shrink-0"
+    >
+      View Prep Page <ArrowRight size={13} />
+    </NavLink>
+  </div>
+)}
 
           <div className="fade-up space-y-1" style={{ animationDelay: '160ms' }}>
             {loading ? (

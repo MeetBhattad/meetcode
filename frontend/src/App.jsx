@@ -7,6 +7,7 @@ import { checkAuth } from "./authSlice";
 import { useEffect } from "react";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./pages/Dashboard";
+import CompanyPrep from "./pages/CompanyPrep";
 import ProblemPage from "./pages/ProblemPage"
 import Admin from "./pages/Admin";
 import AdminVideo from "./components/AdminVideo"
@@ -36,6 +37,7 @@ function App(){
     <Routes>
       <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
       <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />} />
+      <Route path="/company/:companyName" element={isAuthenticated ? <CompanyPrep /> : <Navigate to="/signup" />} />
       <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
       <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
