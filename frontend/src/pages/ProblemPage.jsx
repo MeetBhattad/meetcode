@@ -241,13 +241,11 @@ const ProblemPage = () => {
               )}
 
               {activeLeftTab === 'editorial' && (
-                <div className="prose max-w-none">
-                  <h2 className="text-xl font-bold mb-4">Editorial</h2>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    <Editorial secureUrl={problem.secureUrl} thumbnailUrl={problem.thumbnailUrl} />
-                  </div>
-                </div>
-              )}
+  <Editorial
+    resources={problem.editorialResources}
+    onAskAI={() => setActiveLeftTab('chatAI')}
+  />
+)}
 
               {activeLeftTab === 'solutions' && (
                 <div>

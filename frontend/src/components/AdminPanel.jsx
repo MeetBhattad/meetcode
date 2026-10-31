@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axiosClient from '../utils/axiosClient';
 import { useNavigate, NavLink } from 'react-router';
-import { ArrowLeft, Plus, Trash2, Save, Code2, AlignLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Code2, AlignLeft, CheckCircle2, BookOpen } from 'lucide-react';
 
 // Zod schema matching the updated problem schema
 const problemSchema = z.object({
@@ -46,7 +46,15 @@ const problemSchema = z.object({
       language: z.enum(['C++', 'Java', 'Python']),
       harnessCode: z.string().min(1, 'Test harness is required')
     })
-  ).length(3, 'All three languages required')
+  ).length(3, 'All three languages required'),
+  editorialResources: z.array(
+  z.object({
+    type: z.enum(['youtube', 'article', 'video', 'ai']),
+    url: z.string().url('Must be a valid URL'),
+    title: z.string().min(1, 'Title is required'),
+    author: z.string().optional(),
+  })
+).optional().default([]),
 });
 
 const inputStyle = "w-full bg-[#0d1117] border border-white/[0.08] rounded-lg px-4 py-2.5 text-[13.5px] text-white/90 outline-none placeholder:text-white/20 transition-all focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] hover:border-white/[0.15]";
@@ -81,12 +89,18 @@ function AdminPanel() {
         { language: 'C++', harnessCode: '' },
         { language: 'Java', harnessCode: '' },
         { language: 'Python', harnessCode: '' }
-      ]
+      ],
+      editorialResources: []
     }
   });
 
   const { fields: visibleFields, append: appendVisible, remove: removeVisible } = useFieldArray({ control, name: 'visibleTestCases' });
   const { fields: hiddenFields, append: appendHidden, remove: removeHidden } = useFieldArray({ control, name: 'hiddenTestCases' });
+  const {
+  fields: editorialFields,
+  append: appendEditorial,
+  remove: removeEditorial,
+} = useFieldArray({ control, name: 'editorialResources' });
 
   const onSubmit = async (data) => {
     try {
@@ -280,6 +294,89 @@ function AdminPanel() {
               })}
             </div>
           </div>
+
+          {/* ──────────── SECTION 4: EDITORIAL RESOURCES ──────────── */}
+<div className="rounded-2xl border border-white/[0.06] bg-white/[0.01] p-6 shadow-2xl shadow-black/50">
+  <div className="flex items-center justify-between mb-6 border-b border-white/[0.06] pb-4">
+    <div className="flex items-center gap-2">
+      <BookOpen size={16} className="text-violet-400" />
+      <h2 className="text-[15px] font-medium text-white/90">Editorial Resources</h2>
+    </div>
+    <button
+      type="button"
+      onClick={() => appendEditorial({ type: 'youtube', url: '', title: '', author: '' })}
+      className="flex items-center gap-1.5 text-[12px] font-medium text-violet-400 hover:text-violet-300 transition-colors"
+    >
+      <Plus size={14} /> Add Resource
+    </button>
+  </div>
+
+  {editorialFields.length === 0 ? (
+    <p className="text-[13px] text-white/40 text-center py-4">
+      No resources yet. Add YouTube videos, articles, or videos for this problem.
+    </p>
+  ) : (
+    <div className="space-y-3">
+      {editorialFields.map((field, index) => (
+        <div key={field.id} className="relative p-4 rounded-xl border border-white/[0.04] bg-white/[0.02]">
+          <button
+            type="button"
+            onClick={() => removeEditorial(index)}
+            className="absolute top-3 right-3 text-white/20 hover:text-rose-400 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] text-white/40 block mb-1">Type</label>
+                <select
+                  {...register(`editorialResources.${index}.type`)}
+                  className={inputStyle}
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="youtube">YouTube</option>
+                  <option value="article">Article</option>
+                  <option value="video">Hosted Video</option>
+                  <option value="ai">AI Link</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-[11px] text-white/40 block mb-1">URL</label>
+                <input
+                  {...register(`editorialResources.${index}.url`)}
+                  placeholder="https://youtube.com/watch?v=... or article URL"
+                  className={inputStyle}
+                />
+                {errors.editorialResources?.[index]?.url && (
+                  <span className="text-rose-400 text-[11px]">{errors.editorialResources[index].url.message}</span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-white/40 block mb-1">Title</label>
+                <input
+                  {...register(`editorialResources.${index}.title`)}
+                  placeholder="e.g. Two Sum explained"
+                  className={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-white/40 block mb-1">Author (optional)</label>
+                <input
+                  {...register(`editorialResources.${index}.author`)}
+                  placeholder="e.g. Striver, NeetCode"
+                  className={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
           {/* Submit */}
           <div className="flex justify-end pt-4">

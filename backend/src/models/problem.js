@@ -107,6 +107,18 @@ const problemSchema = new Schema({
     acceptanceRate: { type: Number, default: 0 },
   },
 ],
+ editorialResources: [
+  {
+    type: {
+      type: String,
+      enum: ['youtube', 'article', 'video', 'ai'],
+      default: 'youtube',
+    },
+    url: { type: String, required: true },
+    title: { type: String, required: true },
+    author: { type: String, default: '' },
+  },
+ ]
 })
 
 
