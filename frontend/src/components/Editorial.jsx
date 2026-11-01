@@ -107,13 +107,16 @@ function YoutubeCard({ videoId, url, title, author }) {
     <div className="rounded-xl overflow-hidden border border-white/[0.06] bg-black/40">
       <div className="aspect-video bg-black">
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}`}
-          className="w-full h-full"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          title={title}
-        />
+  src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+  className="w-full h-full"
+  frameBorder="0"
+  loading="lazy"
+  referrerPolicy="strict-origin-when-cross-origin"
+  sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+  title={title}
+/>
       </div>
       <div className="flex items-start justify-between gap-3 p-3 bg-[#0d1117]">
         <div className="min-w-0">

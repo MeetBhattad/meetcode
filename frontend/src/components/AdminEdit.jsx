@@ -100,8 +100,15 @@ const AdminEdit = () => {
             { language: 'Java', harnessCode: '' },
             { language: 'Python', harnessCode: '' }
           ],
-          editorialResources: []
-        };
+         editorialResources: Array.isArray(data.editorialResources) && data.editorialResources.length > 0
+          ? data.editorialResources.map((r) => ({
+              type: r.type || 'youtube',
+              url: r.url || '',
+              title: r.title || '',
+              author: r.author || '',
+            }))
+          : [],
+      };
         reset(formattedData);
       } catch (err) {
         setFetchError("Failed to load problem data. It may have been deleted.");
@@ -326,6 +333,7 @@ const AdminEdit = () => {
           </div>
 
           {/* ──────────── SECTION 4: EDITORIAL RESOURCES ──────────── */}
+{/* ──────────── SECTION: EDITORIAL RESOURCES ──────────── */}
 <div className="rounded-2xl border border-white/[0.06] bg-white/[0.01] p-6 shadow-2xl shadow-black/50">
   <div className="flex items-center justify-between mb-6 border-b border-white/[0.06] pb-4">
     <div className="flex items-center gap-2">

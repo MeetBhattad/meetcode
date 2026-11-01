@@ -118,7 +118,8 @@ const problemSchema = new Schema({
     title: { type: String, required: true },
     author: { type: String, default: '' },
   },
- ]
+ ],
+ problemNumber: { type: Number }
 })
 
 

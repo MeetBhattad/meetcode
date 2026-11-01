@@ -46,6 +46,7 @@ function Homepage() {
   const { user } = useSelector((state) => state.auth);
   const [problems, setProblems] = useState([]);
   const [solvedProblems, setSolvedProblems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -121,7 +122,9 @@ const [companies, setCompanies] = useState([]);
     const statusMatch = filters.status === 'all' || 
                       (filters.status === 'solved' && isSolved) ||
                       (filters.status === 'unsolved' && !isSolved);
-    return difficultyMatch && tagMatch && companyMatch && statusMatch;
+    const searchMatch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    (problem.problemNumber && problem.problemNumber.toString().includes(searchQuery));
+    return difficultyMatch && tagMatch && companyMatch && statusMatch && searchMatch;
   });
 
   const getDifficultyStyle = (difficulty) => {
@@ -219,6 +222,16 @@ const [companies, setCompanies] = useState([]);
           </div>
 
           <div className="fade-up flex flex-wrap items-center gap-3 mb-6" style={{ animationDelay: '80ms' }}>
+          <div className="relative flex-1 min-w-[200px]">
+    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+    <input
+      type="text"
+      placeholder="Search by title or number..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="w-full h-9 pl-9 pr-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all"
+    />
+  </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06] text-white/40">
               <SlidersHorizontal size={14} />
               <span className="text-[12px] font-medium uppercase tracking-wider">Filters</span>
@@ -329,6 +342,7 @@ const [companies, setCompanies] = useState([]);
                   <NavLink 
                     key={problem._id} 
                     to={`/problem/${problem._id}`}
+                    state={{ listIds: filteredProblems.map(p => p._id) }}
                     className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
                   >
                     <div className="flex items-center gap-4 min-w-0">
@@ -338,8 +352,9 @@ const [companies, setCompanies] = useState([]);
                         <Circle size={18} className="text-white/15 flex-shrink-0 group-hover:text-white/30 transition-colors" />
                       )}
                       <h3 className="text-[14.5px] font-medium text-white/90 group-hover:text-violet-400 transition-colors truncate">
-                        {problem.title}
-                      </h3>
+  <span className="text-white/30 mr-2 font-mono text-[13px]">{problem.problemNumber || '---'}.</span>
+  {problem.title}
+</h3>
                     </div>
                     
                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
