@@ -11,6 +11,12 @@ import ChatAi from '../components/ChatAi';
 import Editorial from '../components/Editorial';
 import MockInterview from '../components/MockInterview';
 
+const normalizeLang = (lang) => {
+  const l = (lang || '').toLowerCase();
+  if (l === 'cpp' || l === 'c++') return 'c++';
+  return l;
+};
+
 const ProblemPage = () => {
   const { problemId: urlProblemId } = useParams();
   const [currentProblemId, setCurrentProblemId] = useState(urlProblemId);
@@ -90,8 +96,8 @@ const ProblemPage = () => {
         const response = await axiosClient.get(`/problem/problemById/${currentProblemId}`);
         setProblem(response.data);
         const match = response.data.startCode.find(
-          (sc) => sc.language.toLowerCase() === selectedLanguage.toLowerCase()
-        );
+  (sc) => normalizeLang(sc.language) === normalizeLang(selectedLanguage)
+);
         setCode(match?.initialCode || '');
       } catch (error) {
         console.error('Error fetching problem:', error);
@@ -107,8 +113,8 @@ const ProblemPage = () => {
   useEffect(() => {
     if (problem) {
       const match = problem.startCode.find(
-        (sc) => sc.language.toLowerCase() === selectedLanguage.toLowerCase()
-      );
+  (sc) => normalizeLang(sc.language) === normalizeLang(selectedLanguage)
+);
       setCode(match?.initialCode || '');
     }
   }, [selectedLanguage, problem]);

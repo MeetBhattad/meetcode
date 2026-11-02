@@ -95,13 +95,14 @@ const submitToken = async (resultToken) => {
       if (isResultObtained) {
         // 2. Decode the results before returning
         return result.submissions.map(sub => ({
-          ...sub,
-          stdout: decodeBase64(sub.stdout),
-          stderr: decodeBase64(sub.stderr),
-          compile_output: decodeBase64(sub.compile_output),
-          message: decodeBase64(sub.message),
-          expected_output: decodeBase64(sub.expected_output)
-        }));
+  ...sub,
+  stdin: decodeBase64(sub.stdin),
+  stdout: decodeBase64(sub.stdout),
+  stderr: decodeBase64(sub.stderr),
+  compile_output: decodeBase64(sub.compile_output),
+  message: decodeBase64(sub.message),
+  expected_output: decodeBase64(sub.expected_output)
+}));
       }
       await waiting(1000);
     } catch (error) {
