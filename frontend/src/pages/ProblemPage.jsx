@@ -3,7 +3,7 @@ console.log('🔵 VERSION: clean-nav-v5');
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { useParams, useLocation, NavLink } from 'react-router';
+import { useParams, useLocation, NavLink, useNavigate } from 'react-router';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import axiosClient from "../utils/axiosClient";
 import SubmissionHistory from "../components/SubmissionHistory";
@@ -15,6 +15,7 @@ const ProblemPage = () => {
   const { problemId: urlProblemId } = useParams();
   const [currentProblemId, setCurrentProblemId] = useState(urlProblemId);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [problem, setProblem] = useState(null);
   const [allProblems, setAllProblems] = useState([]);
@@ -205,6 +206,10 @@ const ProblemPage = () => {
   setActiveLeftTab('description');
   setRunResult(null);
   setSubmitResult(null);
+   navigate(`/problem/${id}`, {
+    replace: true,
+    state: location.state,
+  });
 };
 
   const getLanguageForMonaco = (lang) => {

@@ -27,20 +27,25 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [paths, setPaths] = useState([]);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const { data } = await axiosClient.get('/dashboard/stats');
-        setStats(data);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to load dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
+  const fetch = async () => {
+    try {
+      const [statsRes, pathsRes] = await Promise.all([
+        axiosClient.get('/dashboard/stats'),
+        axiosClient.get('/paths'),
+      ]);
+      setStats(statsRes.data);
+      setPaths(pathsRes.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetch();
+}, []);
 
   if (loading) {
     return (
@@ -120,6 +125,41 @@ export default function Dashboard() {
 
         {/* Overview cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {paths.length > 0 && (
+  <div className="mb-8">
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-[14px] font-semibold text-white">Continue Learning</h2>
+      <NavLink to="/paths" className="text-[12px] text-violet-400 hover:text-violet-300">
+        All paths →
+      </NavLink>
+    </div>
+    <div className="grid md:grid-cols-2 gap-3">
+      {paths.filter((p) => p.nextProblemId).slice(0, 2).map((path) => {
+        const progress = path.total > 0 ? path.solved / path.total : 0;
+        return (
+          <NavLink
+            key={path._id}
+            to={`/paths/${path.slug}`}
+            className="group block rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.04] p-4 transition-all"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[13.5px] font-semibold text-white group-hover:text-violet-400 transition-colors truncate">
+                {path.name}
+              </h3>
+              <span className="text-[11px] font-mono text-violet-400">{path.solved}/{path.total}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-600 to-violet-400"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </div>
+          </NavLink>
+        );
+      })}
+    </div>
+  </div>
+)}
           <StatCard
             icon={<CheckCircle2 size={16} className="text-emerald-400" />}
             label="Solved"

@@ -5,6 +5,8 @@ import Homepage from "./pages/Homepage";
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from "./authSlice";
 import { useEffect } from "react";
+import Paths from "./pages/Paths";
+import PathDetail from "./pages/PathDetail";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./pages/Dashboard";
 import CompanyPrep from "./pages/CompanyPrep";
@@ -37,6 +39,8 @@ function App(){
     <Routes>
       <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
       <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />} />
+      <Route path="/paths" element={isAuthenticated ? <Paths /> : <Navigate to="/signup" />} />
+      <Route path="/paths/:slug" element={isAuthenticated ? <PathDetail /> : <Navigate to="/signup" />} />
       <Route path="/company/:companyName" element={isAuthenticated ? <CompanyPrep /> : <Navigate to="/signup" />} />
       <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
       <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
