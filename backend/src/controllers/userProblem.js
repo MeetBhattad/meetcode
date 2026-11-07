@@ -110,21 +110,35 @@ const getProblemById = async (req, res) => {
   const { id } = req.params;
   try {
     if (!id) return res.status(400).json({ error: "ID is missing" });
-    const getProblem = await Problem.findById(id).select(
-      "_id title description difficulty tags visibleTestCases startCode companies editorialResources problemNumber"
-    );
-    if (!getProblem) return res.status(404).json({ error: "Problem not found" });
+
+    const p = await Problem.findById(id)
+      .select(
+        "_id title description difficulty tags visibleTestCases startCode companies editorialResources testHarness"
+      )
+      .lean();
+
+    if (!p) return res.status(404).json({ error: "Problem not found" });
+
+    const isRunnable =
+      Array.isArray(p.testHarness) && p.testHarness.length >= 3 &&
+      Array.isArray(p.visibleTestCases) && p.visibleTestCases.length > 0;
+
+    // Never expose the test harness to the client
+    delete p.testHarness;
+
+    const problemData = { ...p, isRunnable };
 
     const videos = await SolutionVideo.findOne({ problemId: id });
     if (videos) {
       return res.status(200).json({
-        ...getProblem.toObject(),
+        ...problemData,
         secureUrl: videos.secureUrl,
         thumbnailUrl: videos.thumbnailUrl,
         duration: videos.duration,
       });
     }
-    res.status(200).json(getProblem);
+
+    res.status(200).json(problemData);
   } catch (err) {
     console.error("getProblemById error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -164,7 +178,24 @@ const getSolution = async (req, res) => {
 
 const getAllProblem = async (req, res) => {
   try {
-    const problems = await Problem.find({}).select("_id title difficulty tags companies problemNumber");
+    const problems = await Problem.aggregate([
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          difficulty: 1,
+          tags: 1,
+          companies: 1,
+          problemNumber: 1,
+          isRunnable: {
+            $and: [
+              { $gte: [{ $size: { $ifNull: ["$testHarness", []] } }, 3] },
+              { $gt: [{ $size: { $ifNull: ["$visibleTestCases", []] } }, 0] },
+            ],
+          },
+        },
+      },
+    ]);
     res.status(200).json(problems);
   } catch (err) {
     console.error("getAllProblem error:", err);

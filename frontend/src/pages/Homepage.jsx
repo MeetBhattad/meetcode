@@ -365,6 +365,11 @@ const [companies, setCompanies] = useState([]);
                     </div>
                     
                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                      {!problem.isRunnable && (
+    <span className="hidden md:inline-block px-2.5 py-1 rounded-md text-[10.5px] font-semibold tracking-wide border text-amber-400 bg-amber-500/10 border-amber-500/20">
+      🚧 Soon
+    </span>
+  )}
   <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border ${getDifficultyStyle(problem.difficulty)}`}>
     {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
   </span>

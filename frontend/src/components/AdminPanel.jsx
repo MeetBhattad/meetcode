@@ -16,6 +16,7 @@ const problemSchema = z.object({
     'heap', 'backtracking', 'graph', 'dp', 'greedy', 
     'intervals', 'math', 'bitManipulation'
   ]),
+  problemNumber: z.number().int().positive().optional().nullable(),
   visibleTestCases: z.array(
     z.object({
       input: z.string().min(1, 'Input is required'),
@@ -147,6 +148,16 @@ function AdminPanel() {
                 <input {...register('title')} placeholder="e.g. Two Sum" className={inputStyle} />
                 {errors.title && <span className="text-rose-400 text-[11px] mt-1">{errors.title.message}</span>}
               </div>
+
+              <div>
+  <label className={labelStyle}>LeetCode Number (optional)</label>
+  <input
+    type="number"
+    {...register('problemNumber', { valueAsNumber: true })}
+    placeholder="e.g. 1 for Two Sum"
+    className={inputStyle}
+  />
+</div>
 
               <div>
                 <label className={labelStyle}>Description</label>

@@ -36,6 +36,7 @@ const problemSchema = z.object({
       initialCode: z.string().min(1, 'Initial code is required')
     })
   ).length(3, 'All three languages required'),
+  problemNumber: z.number().int().positive().optional().nullable(),
   referenceSolution: z.array(
     z.object({
       language: z.enum(['C++', 'Java', 'Python']),
@@ -184,6 +185,16 @@ const AdminEdit = () => {
                 <input {...register('title')} placeholder="e.g. Two Sum" className={inputStyle} />
                 {errors.title && <span className="text-rose-400 text-[11px] mt-1">{errors.title.message}</span>}
               </div>
+
+              <div>
+  <label className={labelStyle}>LeetCode Number (optional)</label>
+  <input
+    type="number"
+    {...register('problemNumber', { valueAsNumber: true })}
+    placeholder="e.g. 1 for Two Sum"
+    className={inputStyle}
+  />
+</div>
 
               <div>
                 <label className={labelStyle}>Description</label>

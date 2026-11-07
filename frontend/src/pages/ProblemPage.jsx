@@ -1,10 +1,12 @@
 console.log('🔵 VERSION: clean-nav-v5');
 
+
+
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { useParams, useLocation, NavLink, useNavigate } from 'react-router';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Construction } from 'lucide-react';
 import axiosClient from "../utils/axiosClient";
 import SubmissionHistory from "../components/SubmissionHistory";
 import ChatAi from '../components/ChatAi';
@@ -42,12 +44,10 @@ const ProblemPage = () => {
   const [solutionError, setSolutionError] = useState(null);
   const editorRef = useRef(null);
 
-  // Sync URL param to local state (only if user navigates via Homepage or direct URL)
   useEffect(() => {
     setCurrentProblemId(urlProblemId);
   }, [urlProblemId]);
 
-  // Fetch all problems once for navigation
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -60,7 +60,6 @@ const ProblemPage = () => {
     fetchAll();
   }, []);
 
-  // Compute prev/next from filtered list OR global
   useEffect(() => {
     if (allProblems.length === 0) return;
 
@@ -86,7 +85,6 @@ const ProblemPage = () => {
     }
   }, [allProblems, currentProblemId, location.state]);
 
-  // Fetch problem data
   useEffect(() => {
     if (!currentProblemId) return;
     const fetchProblem = async () => {
@@ -109,7 +107,6 @@ const ProblemPage = () => {
     fetchProblem();
   }, [currentProblemId]);
 
-  // Sync code when language changes
   useEffect(() => {
     if (problem) {
       const match = problem.startCode.find(
@@ -119,13 +116,11 @@ const ProblemPage = () => {
     }
   }, [selectedLanguage, problem]);
 
-  // Reset solution cache on problem change
   useEffect(() => {
     setSolution(null);
     setSolutionError(null);
   }, [currentProblemId]);
 
-  // Fetch solution lazily
   useEffect(() => {
     if (
       activeLeftTab === 'solutions' &&
@@ -200,23 +195,17 @@ const ProblemPage = () => {
     }
   };
 
-  // Bypass React Router. Update state manually and replace URL.
   const goToProblem = (id) => {
-  if (!id) return;
-  
-  // DO NOT touch window.history at all. Not pushState, not replaceState.
-  // Some browsers/extensions treat replaceState as a real navigation and add
-  // a history entry anyway. The only guaranteed way to keep history clean
-  // is to leave the URL untouched and drive everything through React state.
-  setCurrentProblemId(id);
-  setActiveLeftTab('description');
-  setRunResult(null);
-  setSubmitResult(null);
-   navigate(`/problem/${id}`, {
-    replace: true,
-    state: location.state,
-  });
-};
+    if (!id) return;
+    setCurrentProblemId(id);
+    setActiveLeftTab('description');
+    setRunResult(null);
+    setSubmitResult(null);
+    navigate(`/problem/${id}`, {
+      replace: true,
+      state: location.state,
+    });
+  };
 
   const getLanguageForMonaco = (lang) => {
     switch (lang) {
@@ -254,6 +243,9 @@ const ProblemPage = () => {
     );
   }
 
+  // ✨ NEW: runnable check
+  const isRunnable = problem?.isRunnable === true;
+
   const allPassed = runResult?.testCases?.length > 0 && runResult.testCases.every((tc) => tc.status_id === 3);
   const passedCount = runResult?.testCases?.filter((tc) => tc.status_id === 3).length || 0;
   const totalCount = runResult?.testCases?.length || 0;
@@ -263,12 +255,6 @@ const ProblemPage = () => {
       {/* LEFT PANEL */}
       <div className="w-1/2 flex flex-col border-r border-base-300">
         <div className="tabs tabs-bordered bg-base-200 px-4">
-        <NavLink
-  to="/"
-  className="flex items-center gap-1 px-3 py-1 my-auto mr-2 rounded text-[11px] text-base-content/50 hover:text-primary hover:bg-base-300 transition-colors self-center flex-shrink-0"
->
-  <ArrowLeft size={12} /> Home
-</NavLink>
           <button className={`tab ${activeLeftTab === 'description' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('description')}>Description</button>
           <button className={`tab ${activeLeftTab === 'editorial' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('editorial')}>Editorial</button>
           <button className={`tab ${activeLeftTab === 'solutions' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('solutions')}>Solutions</button>
@@ -305,6 +291,11 @@ const ProblemPage = () => {
                     {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
                   </div>
                   <div className="badge badge-primary">{problem.tags}</div>
+                  {!isRunnable && (
+                    <div className="badge badge-warning gap-1">
+                      <Construction size={12} /> Coming Soon
+                    </div>
+                  )}
                 </div>
                 <ProblemCompanyBadges companies={problem.companies} />
 
@@ -317,25 +308,29 @@ const ProblemPage = () => {
                 <div className="mt-8">
                   <h3 className="text-lg font-semibold mb-4">Examples:</h3>
                   <div className="space-y-4">
-                    {problem.visibleTestCases.map((example, index) => (
-                      <div key={index} className="bg-base-200 p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">Example {index + 1}:</h4>
-                        <div className="space-y-2 text-sm font-mono">
-                          <div><strong>Input:</strong> {example.input}</div>
-                          <div><strong>Output:</strong> {example.output}</div>
-                          <div><strong>Explanation:</strong> {example.explanation}</div>
+                    {problem.visibleTestCases?.length > 0 ? (
+                      problem.visibleTestCases.map((example, index) => (
+                        <div key={index} className="bg-base-200 p-4 rounded-lg">
+                          <h4 className="font-semibold mb-2">Example {index + 1}:</h4>
+                          <div className="space-y-2 text-sm font-mono">
+                            <div><strong>Input:</strong> <span className="whitespace-pre-wrap">{example.input}</span></div>
+                            <div><strong>Output:</strong> <span className="whitespace-pre-wrap">{example.output}</span></div>
+                            <div><strong>Explanation:</strong> <span className="whitespace-pre-wrap">{example.explanation}</span></div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-sm text-base-content/50">
+                        Examples for this problem are not yet available.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {activeLeftTab === 'editorial' && (
-  <div>
-    <Editorial resources={problem.editorialResources} onAskAI={() => setActiveLeftTab('chatAI')} />
-  </div>
-)}
+              <div className={activeLeftTab === 'editorial' ? 'block' : 'hidden'}>
+                <Editorial resources={problem.editorialResources} onAskAI={() => setActiveLeftTab('chatAI')} />
+              </div>
 
               <div className={activeLeftTab === 'solutions' ? 'block' : 'hidden'}>
                 <h2 className="text-xl font-bold mb-4">Solutions</h2>
@@ -402,17 +397,33 @@ const ProblemPage = () => {
               <div className="p-4 border-t border-base-300 flex justify-between">
                 <button className="btn btn-ghost btn-sm" onClick={() => setActiveRightTab('testcase')}>Console</button>
                 <div className="flex gap-2">
-                  <button className={`btn btn-outline btn-sm ${running ? 'loading' : ''}`} onClick={handleRun} disabled={running || submitting}>Run</button>
-                  <button className={`btn btn-primary btn-sm ${submitting ? 'loading' : ''}`} onClick={handleSubmitCode} disabled={running || submitting}>Submit</button>
+                  <button
+                    className={`btn btn-outline btn-sm ${running ? 'loading' : ''}`}
+                    onClick={handleRun}
+                    disabled={running || submitting || !isRunnable}
+                    title={!isRunnable ? 'This problem is not yet available for execution' : ''}
+                  >
+                    Run
+                  </button>
+                  <button
+                    className={`btn btn-primary btn-sm ${submitting ? 'loading' : ''}`}
+                    onClick={handleSubmitCode}
+                    disabled={running || submitting || !isRunnable}
+                    title={!isRunnable ? 'This problem is not yet available for execution' : ''}
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
           {activeRightTab === 'testcase' && (
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {runResult ? (
-                <>
+            <div className="flex-1 overflow-y-auto">
+              {!isRunnable ? (
+                <ComingSoonPanel />
+              ) : runResult ? (
+                <div className="p-5 space-y-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${allPassed ? 'bg-success/15' : 'bg-error/15'}`}>
@@ -435,24 +446,33 @@ const ProblemPage = () => {
                               <span className={`text-xs font-medium ${passed ? 'text-success' : 'text-error'}`}>{passed ? 'Passed' : 'Failed'}</span>
                             </div>
                             <div className="p-4 space-y-2 text-xs font-mono">
-                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Input</span><span className="flex-1">{tc.stdin || '(empty)'}</span></div>
-                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Expected</span><span className="flex-1">{tc.expected_output || '(empty)'}</span></div>
-                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Output</span><span className={`flex-1 ${!tc.stdout ? 'italic text-base-content/40' : ''}`}>{tc.stdout || '(empty)'}</span></div>
+                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Input</span><span className="flex-1 whitespace-pre-wrap">{tc.stdin || '(empty)'}</span></div>
+                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Expected</span><span className="flex-1 whitespace-pre-wrap">{tc.expected_output || '(empty)'}</span></div>
+                              <div className="flex gap-3"><span className="text-base-content/50 w-16">Output</span><span className={`flex-1 whitespace-pre-wrap ${!tc.stdout ? 'italic text-base-content/40' : ''}`}>{tc.stdout || '(empty)'}</span></div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                </>
-              ) : <div className="text-center py-20 text-base-content/40">Click "Run" to test your code</div>}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-base-content/40 gap-2">
+                  <div className="w-12 h-12 rounded-full bg-base-200 flex items-center justify-center">
+                    <span className="text-2xl">▶</span>
+                  </div>
+                  <p className="text-sm">Click "Run" to test your code</p>
+                </div>
+              )}
             </div>
           )}
 
           {activeRightTab === 'result' && (
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {submitResult ? (
-                <>
+            <div className="flex-1 overflow-y-auto">
+              {!isRunnable ? (
+                <ComingSoonPanel />
+              ) : submitResult ? (
+                <div className="p-5 space-y-5">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${submitResult.accepted ? 'bg-success/15' : 'bg-error/15'}`}>
                       <span className={`text-xl font-bold ${submitResult.accepted ? 'text-success' : 'text-error'}`}>{submitResult.accepted ? '✓' : '✗'}</span>
@@ -469,8 +489,15 @@ const ProblemPage = () => {
                       {submitResult.error || submitResult.errorMessage}
                     </div>
                   )}
-                </>
-              ) : <div className="text-center py-20 text-base-content/40">Click "Submit" to evaluate your code</div>}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-base-content/40 gap-2">
+                  <div className="w-12 h-12 rounded-full bg-base-200 flex items-center justify-center">
+                    <span className="text-2xl">↗</span>
+                  </div>
+                  <p className="text-sm">Click "Submit" to evaluate your code</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -479,6 +506,29 @@ const ProblemPage = () => {
   );
 };
 
+// ─────────────────────────────────────────────────────────────
+// Shared "Coming Soon" panel — used by both Testcase and Result tabs
+// ─────────────────────────────────────────────────────────────
+function ComingSoonPanel() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center gap-4 p-8">
+      <div className="w-16 h-16 rounded-full bg-amber-500/15 flex items-center justify-center">
+        <Construction size={28} className="text-amber-400" />
+      </div>
+      <div className="max-w-sm">
+        <h3 className="text-[16px] font-semibold text-amber-400 mb-1.5">Coming Soon</h3>
+        <p className="text-[13px] text-base-content/60 leading-relaxed">
+          This problem is available from LeetCode but not yet configured for execution on this platform.
+          You can still read the description, use the AI tutor, and try the mock interview.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Company badges
+// ─────────────────────────────────────────────────────────────
 function ProblemCompanyBadges({ companies = [] }) {
   const [expanded, setExpanded] = useState(false);
   const all = (companies || []).filter((c) => c.timeframe === 'all').sort((a, b) => b.frequency - a.frequency);

@@ -15,6 +15,11 @@ const submitCode = async (req, res) => {
     if (language === "cpp") language = "c++";
 
     const problem = await Problem.findById(problemId);
+    if (!problem.hiddenTestCases || problem.hiddenTestCases.length === 0) {
+  return res.status(400).json({
+    error: 'This problem is not yet configured for submission. Check back soon.',
+  });
+}
     if (!problem) return res.status(404).json({ error: "Problem not found" });
     if (!problem.hiddenTestCases || problem.hiddenTestCases.length === 0)
       return res.status(400).json({ error: "Problem has no hidden test cases" });
@@ -112,6 +117,11 @@ const runCode = async (req, res) => {
       return res.status(400).json({ error: "Some fields are missing" });
 
     const problem = await Problem.findById(problemId);
+    if (!problem.visibleTestCases || problem.visibleTestCases.length === 0) {
+  return res.status(400).json({
+    error: 'This problem is not yet configured for testing. Check back soon.',
+  });
+}
     if (!problem) return res.status(404).json({ error: "Problem not found" });
 
     if (language === "cpp") language = "c++";
