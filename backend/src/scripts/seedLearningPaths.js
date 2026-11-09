@@ -13,33 +13,48 @@ const BLIND_75_TITLES = [
   'Reverse Bits', 'Coin Change', 'Longest Palindromic Substring', 'Jump Game',
   'Word Break', 'Search in Rotated Sorted Array', 'Single Number', 'Subsets',
   'Merge Intervals', 'Maximum Product Subarray', 'Decode Ways',
+  // ── Tree problems (10) ──
+  'Maximum Depth of Binary Tree',
+  'Same Tree',
+  'Invert Binary Tree',
+  'Binary Tree Maximum Path Sum',
+  'Binary Tree Level Order Traversal',
+  'Subtree of Another Tree',
+  'Construct Binary Tree from Preorder and Inorder Traversal',
+  'Validate Binary Search Tree',
+  'Kth Smallest Element in a BST',
+  'Lowest Common Ancestor of a Binary Search Tree',
 ];
 
 const NEETCODE_TITLES = [
+  // ── Arrays & Hashing ──
   'Two Sum', 'Valid Parentheses', 'Best Time to Buy and Sell Stock', 'Valid Anagram',
   'Contains Duplicate', 'Product of Array Except Self', 'Longest Consecutive Sequence',
   'First Missing Positive', 'Sort Colors', 'Longest Common Prefix', 'Majority Element',
   'Remove Duplicates from Sorted Array', 'Best Time to Buy and Sell Stock II',
   'Add Binary', 'Find the Duplicate Number', 'Is Subsequence',
+  // ── Sliding Window ──
   'Longest Repeating Character Replacement', 'Minimum Window Substring',
-  'Subarray Sum Equals K',           // NEW batch 7
-  'Two Sum II - Input Array Is Sorted', // NEW batch 7
-  'Remove Element',                  // NEW batch 7
-  'Longest Turbulent Subarray',      // NEW batch 7
+  'Subarray Sum Equals K', 'Two Sum II - Input Array Is Sorted',
+  'Remove Element', 'Longest Turbulent Subarray',
+  // ── Array/String / Misc ──
   'Maximum Subarray', 'Group Anagrams', 'Climbing Stairs', 'Valid Palindrome',
   'Longest Substring Without Repeating Characters', 'Container With Most Water',
   'Daily Temperatures', 'Car Fleet', 'Largest Rectangle in Histogram',
-  'Evaluate Reverse Polish Notation', // NEW batch 7
+  'Evaluate Reverse Polish Notation',
+  // ── Binary Search ──
   'Find Minimum in Rotated Sorted Array', 'Search Insert Position', 'Sqrt(x)',
-  'Find Peak Element', 'Koko Eating Bananas',
-  'Median of Two Sorted Arrays',     // NEW batch 7
+  'Find Peak Element', 'Koko Eating Bananas', 'Median of Two Sorted Arrays',
+  // ── Two Pointers ──
   '3Sum', 'House Robber', 'Number of 1 Bits', 'Reverse Bits', 'Sum of Two Integers',
+  // ── DP ──
   'Coin Change', 'Longest Palindromic Substring', 'Counting Bits', 'Jump Game',
   'Unique Paths', 'Word Break', 'Happy Number', 'Search in Rotated Sorted Array',
   'Longest Increasing Subsequence', 'Palindromic Substrings',
+  // ── Heap ──
   'Top K Frequent Elements', 'Kth Largest Element in an Array',
-  'Task Scheduler',                   // NEW batch 7
-  'K Closest Points to Origin',       // NEW batch 7
+  'Task Scheduler', 'K Closest Points to Origin',
+  // ── Arrays misc ──
   'Single Number', 'Move Zeroes', 'Plus One', 'Subsets', 'Merge Intervals',
   'Insert Interval', 'Non-overlapping Intervals', 'Meeting Rooms', 'Meeting Rooms II',
   'Maximum Product Subarray', 'Jump Game II', 'House Robber II',
@@ -48,6 +63,23 @@ const NEETCODE_TITLES = [
   'Palindrome Number', 'Pow(x, n)', 'Best Time to Buy and Sell Stock III',
   'Best Time to Buy and Sell Stock IV', 'Next Permutation',
   'Search a 2D Matrix', 'Multiply Strings', 'Zigzag Conversion',
+  // ── Trees (16) ──
+  'Invert Binary Tree',
+  'Maximum Depth of Binary Tree',
+  'Same Tree',
+  'Diameter of Binary Tree',
+  'Balanced Binary Tree',
+  'Binary Tree Level Order Traversal',
+  'Binary Tree Right Side View',
+  'Binary Tree Zigzag Level Order Traversal',
+  'Kth Smallest Element in a BST',
+  'Lowest Common Ancestor of a Binary Search Tree',
+  'Lowest Common Ancestor of a Binary Tree',
+  'Validate Binary Search Tree',
+  'Count Good Nodes in Binary Tree',
+  'Construct Binary Tree from Preorder and Inorder Traversal',
+  'Binary Tree Maximum Path Sum',
+  'Subtree of Another Tree',
 ];
 
 const TOPIC_PATHS = [
@@ -56,6 +88,7 @@ const TOPIC_PATHS = [
   { name: 'Sliding Window', slug: 'sliding-window', tags: ['slidingWindow'], description: 'Solve problems with contiguous subarrays and substrings efficiently.' },
   { name: 'Stack', slug: 'stack', tags: ['stack'], description: 'Master the LIFO pattern used in parsing, backtracking, and expression evaluation.' },
   { name: 'Binary Search', slug: 'binary-search', tags: ['binarySearch'], description: 'Classic O(log n) searching. Learn to recognize when to apply it.' },
+  { name: 'Trees', slug: 'trees', tags: ['tree'], description: 'Master binary tree traversal, recursion, and BST properties.' },
   { name: 'Dynamic Programming', slug: 'dynamic-programming', tags: ['dp'], description: 'The hardest pattern for most. Learn to spot overlapping subproblems.' },
   { name: 'Bit Manipulation', slug: 'bit-manipulation', tags: ['bitManipulation'], description: 'Master bitwise tricks that make solutions elegant and fast.' },
   { name: 'Math', slug: 'math', tags: ['math'], description: 'Number theory fundamentals used in interview problems.' },
