@@ -120,8 +120,9 @@ const [companies, setCompanies] = useState([]);
       (c) => c.name === filters.company && c.timeframe === 'all'
     );
     const statusMatch = filters.status === 'all' || 
-                      (filters.status === 'solved' && isSolved) ||
-                      (filters.status === 'unsolved' && !isSolved);
+                  (filters.status === 'runnable' && problem.isRunnable) ||
+                  (filters.status === 'solved' && isSolved) ||
+                  (filters.status === 'unsolved' && !isSolved);
     const searchMatch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     (problem.problemNumber && problem.problemNumber.toString().includes(searchQuery));
     return difficultyMatch && tagMatch && companyMatch && statusMatch && searchMatch;
@@ -245,14 +246,15 @@ const [companies, setCompanies] = useState([]);
             </div>
 
             <select 
-              className="h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all cursor-pointer"
-              value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
-            >
-              <option value="all">All Status</option>
-              <option value="solved">Solved</option>
-              <option value="unsolved">Unsolved</option>
-            </select>
+  className="h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all cursor-pointer"
+  value={filters.status}
+  onChange={(e) => setFilters({...filters, status: e.target.value})}
+>
+  <option value="all">All Status</option>
+  <option value="runnable">Runnable Only</option>
+  <option value="solved">Solved</option>
+  <option value="unsolved">Unsolved</option>
+</select>
 
             <select 
               className="h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[13px] text-white/80 outline-none hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/[0.08] transition-all cursor-pointer"
