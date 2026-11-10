@@ -349,11 +349,16 @@ const [companies, setCompanies] = useState([]);
                 const isSolved = solvedProblems.some(sp => sp._id === problem._id);
                 return (
                   <NavLink 
-                    key={problem._id} 
-                    to={`/problem/${problem._id}`}
-                    state={{ listIds: filteredProblems.map(p => p._id) }}
-                    className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
-                  >
+  key={problem._id} 
+  to={`/problem/${problem._id}`}
+  state={{ 
+    listIds: filteredProblems.map(p => p._id),
+    source: filters.company !== 'all'
+      ? { type: 'company', slug: filters.company, name: `${filters.company} Prep` }
+      : null
+  }}
+  className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
+>
                     <div className="flex items-center gap-4 min-w-0">
                       {isSolved ? (
                         <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />

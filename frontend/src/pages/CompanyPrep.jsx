@@ -237,10 +237,14 @@ export default function CompanyPrep() {
           <div className="space-y-1">
             {filtered.map((p) => (
               <NavLink
-                key={p._id}
-                to={`/problem/${p._id}`}
-                className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
-              >
+  key={p._id}
+  to={`/problem/${p._id}`}
+  state={{ 
+    listIds: filtered.map((x) => x._id),
+    source: { type: 'company', slug: companyName, name: displayCompany }
+  }}
+  className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
+>
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   {p.isSolved ? (
                     <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />

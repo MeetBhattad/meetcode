@@ -1,23 +1,15 @@
-console.log('🔵 VERSION: clean-nav-v5');
-
-
+console.log('🔵 VERSION: clean-nav-v6');
 
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { useParams, useLocation, NavLink, useNavigate } from 'react-router';
-import { ArrowLeft, ArrowRight, Construction } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Construction, XCircle, AlertCircle } from 'lucide-react';
 import axiosClient from "../utils/axiosClient";
 import SubmissionHistory from "../components/SubmissionHistory";
 import ChatAi from '../components/ChatAi';
 import Editorial from '../components/Editorial';
 import MockInterview from '../components/MockInterview';
-
-const normalizeLang = (lang) => {
-  const l = (lang || '').toLowerCase();
-  if (l === 'cpp' || l === 'c++') return 'c++';
-  return l;
-};
 
 const ProblemPage = () => {
   const { problemId: urlProblemId } = useParams();
@@ -94,8 +86,8 @@ const ProblemPage = () => {
         const response = await axiosClient.get(`/problem/problemById/${currentProblemId}`);
         setProblem(response.data);
         const match = response.data.startCode.find(
-  (sc) => normalizeLang(sc.language) === normalizeLang(selectedLanguage)
-);
+          (sc) => sc.language.toLowerCase() === selectedLanguage.toLowerCase()
+        );
         setCode(match?.initialCode || '');
       } catch (error) {
         console.error('Error fetching problem:', error);
@@ -110,8 +102,8 @@ const ProblemPage = () => {
   useEffect(() => {
     if (problem) {
       const match = problem.startCode.find(
-  (sc) => normalizeLang(sc.language) === normalizeLang(selectedLanguage)
-);
+        (sc) => sc.language.toLowerCase() === selectedLanguage.toLowerCase()
+      );
       setCode(match?.initialCode || '');
     }
   }, [selectedLanguage, problem]);
@@ -243,8 +235,24 @@ const ProblemPage = () => {
     );
   }
 
-  // ✨ NEW: runnable check
   const isRunnable = problem?.isRunnable === true;
+
+  // ── Breadcrumb source (path / company / homepage fallback) ──
+  const source = location.state?.source || null;
+  const sourceUrl = source
+    ? source.type === 'path'
+      ? `/paths/${source.slug}`
+      : source.type === 'company'
+        ? `/company/${encodeURIComponent(source.slug)}`
+        : '/'
+    : '/';
+  const sourceLabel = source?.name || 'All Problems';
+
+  // ── Compile error detection for Testcase tab ──
+  const hasCompileError = runResult?.testCases?.some((tc) => tc.status_id === 6);
+  const compileOutput = hasCompileError
+    ? runResult.testCases.find((tc) => tc.compile_output)?.compile_output
+    : null;
 
   const allPassed = runResult?.testCases?.length > 0 && runResult.testCases.every((tc) => tc.status_id === 3);
   const passedCount = runResult?.testCases?.filter((tc) => tc.status_id === 3).length || 0;
@@ -254,6 +262,17 @@ const ProblemPage = () => {
     <div className="h-screen flex bg-base-100">
       {/* LEFT PANEL */}
       <div className="w-1/2 flex flex-col border-r border-base-300">
+        {/* Breadcrumb back to source */}
+        <div className="px-4 py-2 border-b border-base-300 bg-base-100">
+          <NavLink
+            to={sourceUrl}
+            className="inline-flex items-center gap-1.5 text-[11.5px] text-base-content/50 hover:text-primary transition-colors"
+          >
+            <ArrowLeft size={12} />
+            Back to {sourceLabel}
+          </NavLink>
+        </div>
+
         <div className="tabs tabs-bordered bg-base-200 px-4">
           <button className={`tab ${activeLeftTab === 'description' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('description')}>Description</button>
           <button className={`tab ${activeLeftTab === 'editorial' ? 'tab-active' : ''}`} onClick={() => setActiveLeftTab('editorial')}>Editorial</button>
@@ -422,6 +441,8 @@ const ProblemPage = () => {
             <div className="flex-1 overflow-y-auto">
               {!isRunnable ? (
                 <ComingSoonPanel />
+              ) : hasCompileError ? (
+                <CompileErrorPanel compileOutput={compileOutput} />
               ) : runResult ? (
                 <div className="p-5 space-y-5">
                   <div className="flex items-start justify-between gap-4">
@@ -449,6 +470,9 @@ const ProblemPage = () => {
                               <div className="flex gap-3"><span className="text-base-content/50 w-16">Input</span><span className="flex-1 whitespace-pre-wrap">{tc.stdin || '(empty)'}</span></div>
                               <div className="flex gap-3"><span className="text-base-content/50 w-16">Expected</span><span className="flex-1 whitespace-pre-wrap">{tc.expected_output || '(empty)'}</span></div>
                               <div className="flex gap-3"><span className="text-base-content/50 w-16">Output</span><span className={`flex-1 whitespace-pre-wrap ${!tc.stdout ? 'italic text-base-content/40' : ''}`}>{tc.stdout || '(empty)'}</span></div>
+                              {tc.status_id >= 7 && tc.stderr && (
+                                <div className="flex gap-3"><span className="text-error w-16">Error</span><span className="flex-1 whitespace-pre-wrap text-error">{tc.stderr}</span></div>
+                              )}
                             </div>
                           </div>
                         );
@@ -471,13 +495,19 @@ const ProblemPage = () => {
             <div className="flex-1 overflow-y-auto">
               {!isRunnable ? (
                 <ComingSoonPanel />
+              ) : submitResult?.errorType === 'compile' ? (
+                <CompileErrorPanel compileOutput={submitResult.errorMessage} />
               ) : submitResult ? (
                 <div className="p-5 space-y-5">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${submitResult.accepted ? 'bg-success/15' : 'bg-error/15'}`}>
                       <span className={`text-xl font-bold ${submitResult.accepted ? 'text-success' : 'text-error'}`}>{submitResult.accepted ? '✓' : '✗'}</span>
                     </div>
-                    <div><h3 className={`text-lg font-bold ${submitResult.accepted ? 'text-success' : 'text-error'}`}>{submitResult.accepted ? 'Accepted' : 'Submission Failed'}</h3></div>
+                    <div>
+                      <h3 className={`text-lg font-bold ${submitResult.accepted ? 'text-success' : 'text-error'}`}>
+                        {submitResult.accepted ? 'Accepted' : submitResult.errorType === 'runtime' ? 'Runtime Error' : 'Submission Failed'}
+                      </h3>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-base-200 rounded-lg p-3"><div className="text-[10px] text-base-content/50 mb-1">Test Cases</div><div className="font-mono text-base font-semibold">{submitResult.passedTestCases}/{submitResult.totalTestCases}</div></div>
@@ -485,7 +515,16 @@ const ProblemPage = () => {
                     <div className="bg-base-200 rounded-lg p-3"><div className="text-[10px] text-base-content/50 mb-1">Memory</div><div className="font-mono text-base font-semibold">{submitResult.memory ?? 0} KB</div></div>
                   </div>
                   {!submitResult.accepted && (submitResult.error || submitResult.errorMessage) && (
-                    <div className="rounded-lg border-l-4 border-l-error bg-error/5 p-4 text-xs font-mono text-base-content/80">
+                    <div className={`rounded-lg border-l-4 bg-error/5 p-4 text-xs font-mono text-base-content/80 whitespace-pre-wrap ${submitResult.errorType === 'runtime' ? 'border-l-error' : 'border-l-warning'}`}>
+                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold uppercase tracking-wide">
+                        {submitResult.errorType === 'runtime' ? (
+                          <><XCircle size={12} className="text-error" /> <span className="text-error">Runtime Error</span></>
+                        ) : submitResult.errorType === 'wrong' ? (
+                          <><AlertCircle size={12} className="text-warning" /> <span className="text-warning">Wrong Answer</span></>
+                        ) : (
+                          <><AlertCircle size={12} /> Error</>
+                        )}
+                      </div>
                       {submitResult.error || submitResult.errorMessage}
                     </div>
                   )}
@@ -507,8 +546,36 @@ const ProblemPage = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Shared "Coming Soon" panel — used by both Testcase and Result tabs
+// Compile Error Panel
 // ─────────────────────────────────────────────────────────────
+function CompileErrorPanel({ compileOutput }) {
+  return (
+    <div className="p-5 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-error/15 flex items-center justify-center flex-shrink-0">
+          <XCircle size={20} className="text-error" />
+        </div>
+        <div>
+          <h3 className="font-bold text-error">Compilation Error</h3>
+          <p className="text-xs text-base-content/50">
+            Your code failed to compile. Fix the errors below and try again.
+          </p>
+        </div>
+      </div>
+      <div className="rounded-lg border border-error/30 bg-error/5 overflow-hidden">
+        <div className="px-4 py-2 border-b border-error/20 bg-error/10">
+          <span className="text-[11px] font-semibold text-error uppercase tracking-wide">
+            Compiler Output
+          </span>
+        </div>
+        <pre className="p-4 text-xs font-mono whitespace-pre-wrap text-base-content/90 overflow-x-auto">
+          {compileOutput || 'Compilation failed with no error message.'}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 function ComingSoonPanel() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center gap-4 p-8">
@@ -526,9 +593,6 @@ function ComingSoonPanel() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Company badges
-// ─────────────────────────────────────────────────────────────
 function ProblemCompanyBadges({ companies = [] }) {
   const [expanded, setExpanded] = useState(false);
   const all = (companies || []).filter((c) => c.timeframe === 'all').sort((a, b) => b.frequency - a.frequency);

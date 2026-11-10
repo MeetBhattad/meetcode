@@ -111,8 +111,11 @@ export default function PathDetail() {
 
             {!isComplete && nextProblemId && (
               <NavLink
-                to={`/problem/${nextProblemId}`}
-                state={{ listIds: problems.map((p) => p._id) }}
+  to={`/problem/${nextProblemId}`}
+  state={{ 
+    listIds: problems.map((p) => p._id),
+    source: { type: 'path', slug: slug, name: name }
+  }}
                 className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[13px] font-medium transition-colors"
               >
                 Continue where you left off <ArrowRight size={14} />
@@ -125,11 +128,14 @@ export default function PathDetail() {
         <div className="space-y-1">
           {problems.map((p, i) => (
             <NavLink
-              key={p._id}
-              to={`/problem/${p._id}`}
-              state={{ listIds: problems.map((x) => x._id) }}
-              className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
-            >
+  key={p._id}
+  to={`/problem/${p._id}`}
+  state={{ 
+    listIds: problems.map((x) => x._id),
+    source: { type: 'path', slug: slug, name: name }
+  }}
+  className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
+>
               <div className="flex items-center gap-4 min-w-0 flex-1">
                 <span className="text-[12px] font-mono text-white/30 w-8 flex-shrink-0">{i + 1}.</span>
                 {p.isSolved ? (
