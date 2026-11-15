@@ -1,4 +1,5 @@
 const express = require('express')
+const contestRouter = require("./routes/contest");
 const app = express();
 require('dotenv').config();
 const main =  require('./config/db')
@@ -13,6 +14,7 @@ const mockRouter = require("./routes/mockInterview");
 const dashboardRouter = require("./routes/dashboard");
 const learningPathRouter = require("./routes/learningPath");
 const companyRouter = require("./routes/company");
+const reviewRouter = require("./routes/review");
 const cors = require('cors')
 
 
@@ -33,6 +35,8 @@ app.use('/mock', mockRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/paths', learningPathRouter);
 app.use('/company', companyRouter);
+app.use('/review', reviewRouter);
+app.use('/contest', contestRouter);
 
 
 
@@ -48,8 +52,13 @@ const InitalizeConnection = async ()=>{
 
     }
     catch(err){
-        console.log("Error: "+err);
+    console.error("❌ Startup Error:");
+    if (err.errors) {
+        err.errors.forEach((e, i) => console.error(`  [${i+1}] ${e.message}`));
+    } else {
+        console.error(err);
     }
+}
 }
 
 

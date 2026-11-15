@@ -151,6 +151,26 @@ const getDashboardStats = async (req, res) => {
       lastVerdict: mockSessions[0]?.report?.verdict || null,
     };
 
+        // ✅ NEW: 365-day heatmap
+    const dailySolved = {};
+    const seenHeatmap = new Set();
+    acceptedSubs.forEach(s => {
+      const dayKey = s.createdAt.toISOString().slice(0, 10);
+      const dedupeKey = `${dayKey}-${s.problemId}`;
+      if (!seenHeatmap.has(dedupeKey)) {
+        seenHeatmap.add(dedupeKey);
+        dailySolved[dayKey] = (dailySolved[dayKey] || 0) + 1;
+      }
+    });
+
+    const heatmap = [];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      heatmap.push({ date: key, count: dailySolved[key] || 0 });
+    }
+
     res.status(200).json({
       overview: {
         totalSolved: solvedSet.size,
@@ -164,6 +184,7 @@ const getDashboardStats = async (req, res) => {
       topics,
       weakTopics,
       weekly,
+      heatmap,
       recent,
       interviews,
     });

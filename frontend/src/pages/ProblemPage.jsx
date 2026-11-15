@@ -27,6 +27,8 @@ const ProblemPage = () => {
   const [allProblems, setAllProblems] = useState([]);
   const [navigation, setNavigation] = useState({ prev: null, next: null });
 
+  const [showRating, setShowRating] = useState(false);
+
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -178,6 +180,7 @@ const ProblemPage = () => {
       if (response.data.accepted) {
         setSolution(null);
         setSolutionError(null);
+        setShowRating(true);
       }
     } catch (error) {
       console.error('Error submitting code:', error);
@@ -246,12 +249,16 @@ const ProblemPage = () => {
   // ── Breadcrumb source (path / company / homepage fallback) ──
   const source = location.state?.source || null;
   const sourceUrl = source
-    ? source.type === 'path'
-      ? `/paths/${source.slug}`
-      : source.type === 'company'
-        ? `/company/${encodeURIComponent(source.slug)}`
-        : '/'
-    : '/';
+  ? source.type === 'path'
+    ? `/paths/${source.slug}`
+    : source.type === 'company'
+      ? `/company/${encodeURIComponent(source.slug)}`
+      : source.type === 'contest'
+        ? '/contest/arena'
+        : source.type === 'review'
+          ? '/review'
+          : '/'
+  : '/';
   const sourceLabel = source?.name || 'All Problems';
 
   // ── Compile error detection for Testcase tab ──
@@ -547,6 +554,52 @@ const ProblemPage = () => {
           )}
         </div>
       </div>
+      {/* ── Spaced Repetition Rating Modal ── */}
+{showRating && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#0d1117] p-6 shadow-2xl">
+      <h2 className="text-lg font-bold text-white mb-2 text-center">How did that feel?</h2>
+      <p className="text-[13px] text-white/50 text-center mb-6">
+        This helps us schedule your next review using Spaced Repetition.
+      </p>
+      
+      <div className="grid grid-cols-3 gap-3">
+        <button
+          onClick={async () => {
+            await axiosClient.post(`/review/${currentProblemId}`, { quality: 2 }); // Failed/Hard
+            setShowRating(false);
+          }}
+          className="flex flex-col items-center gap-2 py-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+        >
+          <span className="font-semibold text-sm">Hard</span>
+          <span className="text-[10px] opacity-70">Review tomorrow</span>
+        </button>
+
+        <button
+          onClick={async () => {
+            await axiosClient.post(`/review/${currentProblemId}`, { quality: 4 }); // Good
+            setShowRating(false);
+          }}
+          className="flex flex-col items-center gap-2 py-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all"
+        >
+          <span className="font-semibold text-sm">Medium</span>
+          <span className="text-[10px] opacity-70">Review in 3 days</span>
+        </button>
+
+        <button
+          onClick={async () => {
+            await axiosClient.post(`/review/${currentProblemId}`, { quality: 5 }); // Easy
+            setShowRating(false);
+          }}
+          className="flex flex-col items-center gap-2 py-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all"
+        >
+          <span className="font-semibold text-sm">Easy</span>
+          <span className="text-[10px] opacity-70">Review in 7+ days</span>
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

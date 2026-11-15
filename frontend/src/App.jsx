@@ -1,4 +1,6 @@
 import {Routes, Route ,Navigate} from "react-router";
+import ContestSetup from "./pages/ContestSetup";
+import ContestArena from "./pages/ContestArena";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Homepage from "./pages/Homepage";
@@ -17,6 +19,7 @@ import AdminDelete from "./components/AdminDelete"
 import AdminUpload from "./components/AdminUpload"
 import AdminUpdateList from "./components/AdminUpdateList"; 
 import AdminEdit from "./components/AdminEdit"; 
+import ReviewDeck from "./pages/ReviewDeck";
 
 function App(){
   
@@ -52,6 +55,9 @@ function App(){
       <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
       <Route path="/admin/update" element={isAuthenticated && user?.role === 'admin' ? <AdminUpdateList /> : <Navigate to="/" />} />
       <Route path="/admin/edit/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminEdit /> : <Navigate to="/" />} />
+      <Route path="/review" element={isAuthenticated ? <ReviewDeck /> : <Navigate to="/signup" />} />
+      <Route path="/contest" element={isAuthenticated ? <ContestSetup /> : <Navigate to="/signup" />} />
+      <Route path="/contest/arena" element={isAuthenticated ? <ContestArena /> : <Navigate to="/signup" />} />
       
     </Routes>
   </>

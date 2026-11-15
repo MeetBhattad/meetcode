@@ -1,6 +1,7 @@
 const Problem = require("../models/problem");
 const Submission = require("../models/submission");
 const User = require("../models/user");
+const ReviewCard = require("../models/reviewCard");
 const { getLanguageById, submitBatch, submitToken, buildFinalCode, unescapeNewlines } = require("../utils/problemUtility");
 
 const submitCode = async (req, res) => {
@@ -94,15 +95,27 @@ const submitCode = async (req, res) => {
     submittedResult.memory = memory;
     await submittedResult.save();
 
-    if (status === "accepted") {
+    
+
+     if (status === "accepted") {
       const alreadySolved = req.result.problemSolved.some((id) => id.toString() === problemId);
       if (!alreadySolved) {
         req.result.problemSolved.push(problemId);
         await req.result.save();
+
+        // 🚀 Spaced Repetition: Auto-enroll on first solve
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 1); // Review tomorrow
+        
+        await ReviewCard.findOneAndUpdate(
+          { userId, problemId },
+          { nextReviewDate: nextDate, interval: 1, easeFactor: 2.5, repetitions: 1 },
+          { upsert: true, new: true }
+        );
       }
     }
 
-        res.status(201).json({
+      res.status(201).json({
       accepted: status === "accepted",
       totalTestCases: submittedResult.testCasesTotal,
       passedTestCases: testCasesPassed,
