@@ -11,17 +11,10 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// TREE HELPERS (per language, inlined into every harness)
+// HELPERS
 // ─────────────────────────────────────────────────────────────
 
-const CPP_HELPER = `#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <queue>
-#include <algorithm>
-#include <climits>
-#include <unordered_map>
+const CPP_HELPER = `#include <bits/stdc++.h>
 using namespace std;
 
 struct TreeNode {
@@ -38,8 +31,7 @@ TreeNode* buildTree(const string& line) {
     while (ss >> t) tokens.push_back(t);
     if (tokens.empty() || tokens[0] == "null") return nullptr;
     TreeNode* root = new TreeNode(stoi(tokens[0]));
-    queue<TreeNode*> q;
-    q.push(root);
+    queue<TreeNode*> q; q.push(root);
     int i = 1;
     while (!q.empty() && i < (int)tokens.size()) {
         TreeNode* node = q.front(); q.pop();
@@ -60,8 +52,7 @@ TreeNode* buildTree(const string& line) {
 void printTree(TreeNode* root) {
     if (!root) { cout << endl; return; }
     vector<string> result;
-    queue<TreeNode*> q;
-    q.push(root);
+    queue<TreeNode*> q; q.push(root);
     while (!q.empty()) {
         TreeNode* node = q.front(); q.pop();
         if (node) {
@@ -80,26 +71,12 @@ void printTree(TreeNode* root) {
     cout << endl;
 }
 
-string readLine() {
-    string line;
-    getline(cin, line);
-    return line;
-}
-
 vector<int> parseArray(const string& line) {
     vector<int> v;
     stringstream ss(line);
     int x;
     while (ss >> x) v.push_back(x);
     return v;
-}
-
-TreeNode* findNode(TreeNode* root, int val) {
-    if (!root) return nullptr;
-    if (root->val == val) return root;
-    TreeNode* left = findNode(root->left, val);
-    if (left) return left;
-    return findNode(root->right, val);
 }
 `;
 
@@ -122,8 +99,7 @@ class TreeUtil {
         String[] tokens = line.trim().split("\\\\s+");
         if (tokens.length == 0 || tokens[0].equals("null")) return null;
         TreeNode root = new TreeNode(Integer.parseInt(tokens[0]));
-        Queue<TreeNode> q = new LinkedList<>();
-        q.offer(root);
+        Queue<TreeNode> q = new LinkedList<>(); q.offer(root);
         int i = 1;
         while (!q.isEmpty() && i < tokens.length) {
             TreeNode node = q.poll();
@@ -144,8 +120,7 @@ class TreeUtil {
     static void printTree(TreeNode root) {
         if (root == null) { System.out.println(); return; }
         List<String> result = new ArrayList<>();
-        Queue<TreeNode> q = new LinkedList<>();
-        q.offer(root);
+        Queue<TreeNode> q = new LinkedList<>(); q.offer(root);
         while (!q.isEmpty()) {
             TreeNode node = q.poll();
             if (node != null) {
@@ -160,22 +135,6 @@ class TreeUtil {
             result.remove(result.size() - 1);
         }
         System.out.println(String.join(" ", result));
-    }
-
-    static TreeNode findNode(TreeNode root, int val) {
-        if (root == null) return null;
-        if (root.val == val) return root;
-        TreeNode left = findNode(root.left, val);
-        if (left != null) return left;
-        return findNode(root.right, val);
-    }
-
-    static int[] parseArray(String line) {
-        if (line == null || line.trim().isEmpty()) return new int[]{};
-        String[] tokens = line.trim().split("\\\\s+");
-        int[] arr = new int[tokens.length];
-        for (int i = 0; i < tokens.length; i++) arr[i] = Integer.parseInt(tokens[i]);
-        return arr;
     }
 }
 `;
@@ -228,16 +187,6 @@ def print_tree(root):
     while result and result[-1] == 'null':
         result.pop()
     print(' '.join(result))
-
-def find_node(root, val):
-    if not root:
-        return None
-    if root.val == val:
-        return root
-    left = find_node(root.left, val)
-    if left:
-        return left
-    return find_node(root.right, val)
 `;
 
 // ─────────────────────────────────────────────────────────────
@@ -245,657 +194,526 @@ def find_node(root, val):
 // ─────────────────────────────────────────────────────────────
 
 function buildCppHarness(type, method) {
-  const setup = {
-    'tree-int': `string line1 = readLine();
-    TreeNode* root = buildTree(line1);`,
-    'tree-bool': `string line1 = readLine();
-    TreeNode* root = buildTree(line1);`,
-    'tree-tree': `string line1 = readLine();
-    TreeNode* root = buildTree(line1);`,
-    'tree-list': `string line1 = readLine();
-    TreeNode* root = buildTree(line1);`,
-    'tree-list-of-lists': `string line1 = readLine();
-    TreeNode* root = buildTree(line1);`,
-    'two-trees-bool': `string line1 = readLine();
-    string line2 = readLine();
-    TreeNode* root = buildTree(line1);
-    TreeNode* subRoot = buildTree(line2);`,
-    'tree-int-int': `string line1 = readLine();
-    string line2 = readLine();
-    TreeNode* root = buildTree(line1);
-    int k = stoi(line2);`,
-    'tree-two-values-int': `string line1 = readLine();
-    string line2 = readLine();
-    string line3 = readLine();
-    TreeNode* root = buildTree(line1);
-    TreeNode* p = findNode(root, stoi(line2));
-    TreeNode* q = findNode(root, stoi(line3));`,
-    'two-arrays-tree': `string line1 = readLine();
-    string line2 = readLine();
-    vector<int> preorder = parseArray(line1);
-    vector<int> inorder = parseArray(line2);`,
-  };
-
-  const call = {
-    'tree-int': `Solution sol;
-    cout << sol.${method}(root) << endl;`,
-    'tree-bool': `Solution sol;
-    cout << (sol.${method}(root) ? "true" : "false") << endl;`,
-    'tree-tree': `Solution sol;
-    printTree(sol.${method}(root));`,
-    'tree-list': `Solution sol;
-    vector<int> res = sol.${method}(root);
-    for (size_t i = 0; i < res.size(); i++) { if (i > 0) cout << " "; cout << res[i]; }
-    cout << endl;`,
-    'tree-list-of-lists': `Solution sol;
-    vector<vector<int>> res = sol.${method}(root);
-    for (size_t r = 0; r < res.size(); r++) {
-        for (size_t i = 0; i < res[r].size(); i++) { if (i > 0) cout << " "; cout << res[r][i]; }
-        cout << endl;
-    }`,
-    'two-trees-bool': `Solution sol;
-    cout << (sol.${method}(root, subRoot) ? "true" : "false") << endl;`,
-    'tree-int-int': `Solution sol;
-    cout << sol.${method}(root, k) << endl;`,
-    'tree-two-values-int': `Solution sol;
-    TreeNode* result = sol.${method}(root, p, q);
-    cout << result->val << endl;`,
-    'two-arrays-tree': `Solution sol;
-    TreeNode* result = sol.${method}(preorder, inorder);
-    printTree(result);`,
-  };
-
-  return `${CPP_HELPER}
-{{USER_CODE}}
-
-int main() {
-    ${setup[type]}
-    ${call[type]}
-    return 0;
-}`;
+  if (type === 'tree-list') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    Solution sol;\n    vector<int> r = sol.${method}(root);\n    for (size_t i = 0; i < r.size(); i++) { if (i) cout << " "; cout << r[i]; }\n    cout << endl;\n    return 0;\n}`;
+  }
+  if (type === 'tree-int') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    Solution sol;\n    cout << sol.${method}(root) << endl;\n    return 0;\n}`;
+  }
+  if (type === 'tree-int-int') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    string line2; getline(cin, line2);\n    int k = stoi(line2);\n    Solution sol;\n    cout << sol.${method}(root, k) << endl;\n    return 0;\n}`;
+  }
+  if (type === 'tree-tree') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    Solution sol;\n    printTree(sol.${method}(root));\n    return 0;\n}`;
+  }
+  if (type === 'tree-int-tree') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    string line2; getline(cin, line2);\n    int k = stoi(line2);\n    Solution sol;\n    printTree(sol.${method}(root, k));\n    return 0;\n}`;
+  }
+  if (type === 'void-inplace-tree') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    Solution sol;\n    sol.${method}(root);\n    printTree(root);\n    return 0;\n}`;
+  }
+  if (type === 'tree-list-of-lists') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    string line1; getline(cin, line1);\n    TreeNode* root = buildTree(line1);\n    Solution sol;\n    vector<vector<int>> r = sol.${method}(root);\n    for (auto& row : r) { for (size_t i = 0; i < row.size(); i++) { if (i) cout << " "; cout << row[i]; } cout << endl; }\n    return 0;\n}`;
+  }
+  if (type === 'n-edges-int-arr') {
+    return `${CPP_HELPER}\n{{USER_CODE}}\n\nint main() {\n    int n; cin >> n; cin.ignore();\n    string line; getline(cin, line);\n    stringstream ss(line);\n    vector<int> flat; int x;\n    while (ss >> x) flat.push_back(x);\n    vector<vector<int>> edges;\n    for (size_t i = 0; i + 1 < flat.size(); i += 2) edges.push_back({flat[i], flat[i+1]});\n    Solution sol;\n    vector<int> r = sol.${method}(n, edges);\n    for (size_t i = 0; i < r.size(); i++) { if (i) cout << " "; cout << r[i]; }\n    cout << endl;\n    return 0;\n}`;
+  }
+  return '';
 }
 
 function buildJavaHarness(type, method) {
-  const setup = {
-    'tree-int': `String line1 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);`,
-    'tree-bool': `String line1 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);`,
-    'tree-tree': `String line1 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);`,
-    'tree-list': `String line1 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);`,
-    'tree-list-of-lists': `String line1 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);`,
-    'two-trees-bool': `String line1 = sc.nextLine();
-        String line2 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);
-        TreeNode subRoot = TreeUtil.buildTree(line2);`,
-    'tree-int-int': `String line1 = sc.nextLine();
-        String line2 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);
-        int k = Integer.parseInt(line2.trim());`,
-    'tree-two-values-int': `String line1 = sc.nextLine();
-        String line2 = sc.nextLine();
-        String line3 = sc.nextLine();
-        TreeNode root = TreeUtil.buildTree(line1);
-        TreeNode p = TreeUtil.findNode(root, Integer.parseInt(line2.trim()));
-        TreeNode q = TreeUtil.findNode(root, Integer.parseInt(line3.trim()));`,
-    'two-arrays-tree': `String line1 = sc.nextLine();
-        String line2 = sc.nextLine();
-        int[] preorder = TreeUtil.parseArray(line1);
-        int[] inorder = TreeUtil.parseArray(line2);`,
-  };
-
-  const call = {
-    'tree-int': `Solution sol = new Solution();
-        System.out.println(sol.${method}(root));`,
-    'tree-bool': `Solution sol = new Solution();
-        System.out.println(sol.${method}(root) ? "true" : "false");`,
-    'tree-tree': `Solution sol = new Solution();
-        TreeUtil.printTree(sol.${method}(root));`,
-    'tree-list': `Solution sol = new Solution();
-        List<Integer> res = sol.${method}(root);
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < res.size(); i++) { if (i > 0) sb.append(" "); sb.append(res.get(i)); }
-        System.out.println(sb.toString());`,
-    'tree-list-of-lists': `Solution sol = new Solution();
-        List<List<Integer>> res = sol.${method}(root);
-        for (List<Integer> row : res) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < row.size(); i++) { if (i > 0) sb.append(" "); sb.append(row.get(i)); }
-            System.out.println(sb.toString());
-        }`,
-    'two-trees-bool': `Solution sol = new Solution();
-        System.out.println(sol.${method}(root, subRoot) ? "true" : "false");`,
-    'tree-int-int': `Solution sol = new Solution();
-        System.out.println(sol.${method}(root, k));`,
-    'tree-two-values-int': `Solution sol = new Solution();
-        TreeNode result = sol.${method}(root, p, q);
-        System.out.println(result.val);`,
-    'two-arrays-tree': `Solution sol = new Solution();
-        TreeNode result = sol.${method}(preorder, inorder);
-        TreeUtil.printTree(result);`,
-  };
-
-  return `${JAVA_HELPER}
-{{USER_CODE}}
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        ${setup[type]}
-        ${call[type]}
-    }
-}`;
+  if (type === 'tree-list') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        List<Integer> r = new Solution().${method}(root);\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < r.size(); i++) { if (i > 0) sb.append(" "); sb.append(r.get(i)); }\n        System.out.println(sb.toString());\n    }\n}`;
+  }
+  if (type === 'tree-int') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        System.out.println(new Solution().${method}(root));\n    }\n}`;
+  }
+  if (type === 'tree-int-int') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        int k = Integer.parseInt(sc.nextLine().trim());\n        System.out.println(new Solution().${method}(root, k));\n    }\n}`;
+  }
+  if (type === 'tree-tree') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        TreeUtil.printTree(new Solution().${method}(root));\n    }\n}`;
+  }
+  if (type === 'tree-int-tree') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        int k = Integer.parseInt(sc.nextLine().trim());\n        TreeUtil.printTree(new Solution().${method}(root, k));\n    }\n}`;
+  }
+  if (type === 'void-inplace-tree') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        new Solution().${method}(root);\n        TreeUtil.printTree(root);\n    }\n}`;
+  }
+  if (type === 'tree-list-of-lists') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        TreeNode root = TreeUtil.buildTree(sc.nextLine());\n        List<List<Integer>> r = new Solution().${method}(root);\n        for (List<Integer> row : r) {\n            StringBuilder sb = new StringBuilder();\n            for (int i = 0; i < row.size(); i++) { if (i > 0) sb.append(" "); sb.append(row.get(i)); }\n            System.out.println(sb.toString());\n        }\n    }\n}`;
+  }
+  if (type === 'n-edges-int-arr') {
+    return `${JAVA_HELPER}\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        String line2 = sc.hasNextLine() ? sc.nextLine().trim() : "";\n        String[] tokens = line2.isEmpty() ? new String[0] : line2.split("\\\\s+");\n        int[][] edges = new int[tokens.length / 2][2];\n        for (int i = 0; i < tokens.length; i += 2) {\n            edges[i/2][0] = Integer.parseInt(tokens[i]);\n            edges[i/2][1] = Integer.parseInt(tokens[i+1]);\n        }\n        int[] r = new Solution().${method}(n, edges);\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < r.length; i++) { if (i > 0) sb.append(" "); sb.append(r[i]); }\n        System.out.println(sb.toString());\n    }\n}`;
+  }
+  return '';
 }
 
 function buildPyHarness(type, method) {
-  const setup = {
-    'tree-int': `line1 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)`,
-    'tree-bool': `line1 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)`,
-    'tree-tree': `line1 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)`,
-    'tree-list': `line1 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)`,
-    'tree-list-of-lists': `line1 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)`,
-    'two-trees-bool': `line1 = sys.stdin.readline().rstrip('\\n')
-    line2 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)
-    subRoot = build_tree(line2)`,
-    'tree-int-int': `line1 = sys.stdin.readline().rstrip('\\n')
-    line2 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)
-    k = int(line2.strip())`,
-    'tree-two-values-int': `line1 = sys.stdin.readline().rstrip('\\n')
-    line2 = sys.stdin.readline().rstrip('\\n')
-    line3 = sys.stdin.readline().rstrip('\\n')
-    root = build_tree(line1)
-    p = find_node(root, int(line2.strip()))
-    q = find_node(root, int(line3.strip()))`,
-    'two-arrays-tree': `line1 = sys.stdin.readline().rstrip('\\n')
-    line2 = sys.stdin.readline().rstrip('\\n')
-    preorder = list(map(int, line1.split())) if line1.strip() else []
-    inorder = list(map(int, line2.split())) if line2.strip() else []`,
-  };
-
-  const call = {
-    'tree-int': `print(Solution().${method}(root))`,
-    'tree-bool': `print("true" if Solution().${method}(root) else "false")`,
-    'tree-tree': `print_tree(Solution().${method}(root))`,
-    'tree-list': `res = Solution().${method}(root)
-    print(' '.join(map(str, res)))`,
-    'tree-list-of-lists': `res = Solution().${method}(root)
-    for row in res:
-        print(' '.join(map(str, row)))`,
-    'two-trees-bool': `print("true" if Solution().${method}(root, subRoot) else "false")`,
-    'tree-int-int': `print(Solution().${method}(root, k))`,
-    'tree-two-values-int': `result = Solution().${method}(root, p, q)
-    print(result.val)`,
-    'two-arrays-tree': `result = Solution().${method}(preorder, inorder)
-    print_tree(result)`,
-  };
-
-  return `${PY_HELPER}
-{{USER_CODE}}
-
-def main():
-    ${setup[type]}
-    ${call[type]}
-
-if __name__ == "__main__":
-    main()`;
+  if (type === 'tree-list') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    r = Solution().${method}(root)\n    print(' '.join(map(str, r)))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'tree-int') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    print(Solution().${method}(root))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'tree-int-int') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    k = int(sys.stdin.readline().strip())\n    print(Solution().${method}(root, k))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'tree-tree') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    print_tree(Solution().${method}(root))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'tree-int-tree') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    k = int(sys.stdin.readline().strip())\n    print_tree(Solution().${method}(root, k))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'void-inplace-tree') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    Solution().${method}(root)\n    print_tree(root)\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'tree-list-of-lists') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    line = sys.stdin.readline().rstrip('\\n')\n    root = build_tree(line)\n    r = Solution().${method}(root)\n    for row in r:\n        print(' '.join(map(str, row)))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  if (type === 'n-edges-int-arr') {
+    return `${PY_HELPER}\n{{USER_CODE}}\n\ndef main():\n    lines = sys.stdin.read().strip().split('\\n')\n    n = int(lines[0].strip())\n    flat = list(map(int, lines[1].split())) if len(lines) > 1 and lines[1].strip() else []\n    edges = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]\n    r = Solution().${method}(n, edges)\n    print(' '.join(map(str, r)))\n\nif __name__ == "__main__":\n    main()`;
+  }
+  return '';
 }
 
 // ─────────────────────────────────────────────────────────────
-// PROBLEM DATA (16 tree problems)
+// PROBLEMS — 15 (3 Easy, 8 Medium, 4 Hard)
 // ─────────────────────────────────────────────────────────────
 
 const problemsData = [
+  // ═══════════ EASY (3) ═══════════
   {
-    title: 'Invert Binary Tree',
-    problemNumber: 226,
-    description: 'Given the `root` of a binary tree, invert the tree, and return its root.\n\nInverting a tree means swapping the left and right children of every node.\n\n**Input format:** Level-order array with `null` for missing children (LeetCode format). E.g., `4 2 7 1 3 6 9`.',
+    title: 'Binary Tree Inorder Traversal',
+    problemNumber: 94,
     difficulty: 'easy',
     tags: 'tree',
-    harnessType: 'tree-tree',
-    methodName: 'invertTree',
+    harnessType: 'tree-list',
+    methodName: 'inorderTraversal',
+    description: 'Given the `root` of a binary tree, return the inorder traversal of its nodes\' values.\n\nInorder: left → root → right.',
     visibleTestCases: [
-      { input: '4 2 7 1 3 6 9', output: '4 7 2 9 6 3 1', explanation: 'Swap left/right children at every node.' },
-      { input: '2 1 3', output: '2 3 1', explanation: 'Simple two-child swap.' },
+      { input: '1 null 2 3', output: '1 3 2', explanation: 'Inorder of [1,null,2,3] = [1,3,2].' },
+      { input: '1', output: '1', explanation: 'Single node.' },
     ],
-      hiddenTestCases: [
-      { input: '1', output: '1' },
-      { input: '1 2', output: '1 null 2' },
-      { input: '1 2 3 4 5 6 7', output: '1 3 2 7 6 5 4' },
+    hiddenTestCases: [
+      { input: '1 2', output: '2 1' },
+      { input: '1 2 3', output: '2 1 3' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* invertTree(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def invertTree(self, root: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<int> inorderTraversal(TreeNode* root) {\n        // Write your code here\n        return {};\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        // Write your code here\n        return new ArrayList<>();\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def inorderTraversal(self, root: TreeNode) -> List[int]:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* invertTree(TreeNode* root) {\n        if (!root) return nullptr;\n        TreeNode* tmp = root->left;\n        root->left = root->right;\n        root->right = tmp;\n        invertTree(root->left);\n        invertTree(root->right);\n        return root;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        if (root == null) return null;\n        TreeNode tmp = root.left;\n        root.left = root.right;\n        root.right = tmp;\n        invertTree(root.left);\n        invertTree(root.right);\n        return root;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def invertTree(self, root: TreeNode) -> TreeNode:\n        if not root:\n            return None\n        root.left, root.right = root.right, root.left\n        self.invertTree(root.left)\n        self.invertTree(root.right)\n        return root' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<int> inorderTraversal(TreeNode* root) {\n        vector<int> res;\n        stack<TreeNode*> st;\n        TreeNode* cur = root;\n        while (cur || !st.empty()) {\n            while (cur) { st.push(cur); cur = cur->left; }\n            cur = st.top(); st.pop();\n            res.push_back(cur->val);\n            cur = cur->right;\n        }\n        return res;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        Deque<TreeNode> st = new ArrayDeque<>();\n        TreeNode cur = root;\n        while (cur != null || !st.isEmpty()) {\n            while (cur != null) { st.push(cur); cur = cur.left; }\n            cur = st.pop();\n            res.add(cur.val);\n            cur = cur.right;\n        }\n        return res;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def inorderTraversal(self, root: TreeNode) -> List[int]:\n        res = []\n        st = []\n        cur = root\n        while cur or st:\n            while cur:\n                st.append(cur)\n                cur = cur.left\n            cur = st.pop()\n            res.append(cur.val)\n            cur = cur.right\n        return res' },
     ],
   },
+
   {
-    title: 'Maximum Depth of Binary Tree',
-    problemNumber: 104,
-    description: 'Given the `root` of a binary tree, return its maximum depth.\n\nA binary tree\'s maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.',
+    title: 'Binary Tree Postorder Traversal',
+    problemNumber: 145,
+    difficulty: 'easy',
+    tags: 'tree',
+    harnessType: 'tree-list',
+    methodName: 'postorderTraversal',
+    description: 'Given the `root` of a binary tree, return the postorder traversal of its nodes\' values.\n\nPostorder: left → right → root.',
+    visibleTestCases: [
+      { input: '1 null 2 3', output: '3 2 1', explanation: 'Postorder of [1,null,2,3] = [3,2,1].' },
+      { input: '1', output: '1', explanation: 'Single node.' },
+    ],
+    hiddenTestCases: [
+      { input: '1 2', output: '2 1' },
+      { input: '1 2 3', output: '2 3 1' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<int> postorderTraversal(TreeNode* root) {\n        // Write your code here\n        return {};\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public List<Integer> postorderTraversal(TreeNode root) {\n        // Write your code here\n        return new ArrayList<>();\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def postorderTraversal(self, root: TreeNode) -> List[int]:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<int> postorderTraversal(TreeNode* root) {\n        vector<int> res;\n        stack<TreeNode*> st; if (root) st.push(root);\n        while (!st.empty()) {\n            TreeNode* n = st.top(); st.pop();\n            res.push_back(n->val);\n            if (n->left) st.push(n->left);\n            if (n->right) st.push(n->right);\n        }\n        reverse(res.begin(), res.end());\n        return res;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public List<Integer> postorderTraversal(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        Deque<TreeNode> st = new ArrayDeque<>();\n        if (root != null) st.push(root);\n        while (!st.isEmpty()) {\n            TreeNode n = st.pop();\n            res.add(n.val);\n            if (n.left != null) st.push(n.left);\n            if (n.right != null) st.push(n.right);\n        }\n        Collections.reverse(res);\n        return res;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def postorderTraversal(self, root: TreeNode) -> List[int]:\n        if not root:\n            return []\n        res = []\n        st = [root]\n        while st:\n            n = st.pop()\n            res.append(n.val)\n            if n.left: st.append(n.left)\n            if n.right: st.append(n.right)\n        res.reverse()\n        return res' },
+    ],
+  },
+
+  {
+    title: 'Binary Tree Tilt',
+    problemNumber: 563,
     difficulty: 'easy',
     tags: 'tree',
     harnessType: 'tree-int',
-    methodName: 'maxDepth',
+    methodName: 'findTilt',
+    description: 'Given the `root` of a binary tree, return the sum of every tree node\'s tilt.\n\nThe tilt of a tree node is the absolute difference between the sum of all left subtree node values and all right subtree node values. If a node does not have a left child, then the sum of the left subtree node values is treated as `0`. The rule is similar if the node does not have a right child.',
     visibleTestCases: [
-      { input: '3 9 20 null null 15 7', output: '3', explanation: 'Levels: [3], [9,20], [15,7] — depth 3.' },
-      { input: '1 null 2', output: '2', explanation: 'Chain of 2 nodes.' },
-    ],
-    hiddenTestCases: [
-      { input: 'null', output: '0' },
-      { input: '1', output: '1' },
-      { input: '1 2 3 4 5', output: '3' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public int maxDepth(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def maxDepth(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        if (!root) return 0;\n        return 1 + max(maxDepth(root->left), maxDepth(root->right));\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def maxDepth(self, root: TreeNode) -> int:\n        if not root:\n            return 0\n        return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))' },
-    ],
-  },
-  {
-    title: 'Same Tree',
-    problemNumber: 100,
-    description: 'Given the roots of two binary trees `p` and `q`, return `true` if they are the same tree, or `false` otherwise.\n\nTwo binary trees are considered the same if they are structurally identical, and the nodes have the same value.\n\n**Input format:** Two lines, each a level-order array.',
-    difficulty: 'easy',
-    tags: 'tree',
-    harnessType: 'two-trees-bool',
-    methodName: 'isSameTree',
-    visibleTestCases: [
-      { input: '1 2 3\n1 2 3', output: 'true', explanation: 'Identical structure and values.' },
-      { input: '1 2\n1 null 2', output: 'false', explanation: 'Different structure.' },
-    ],
-    hiddenTestCases: [
-      { input: '1 2 1\n1 1 2', output: 'false' },
-      { input: 'null\nnull', output: 'true' },
-      { input: '1\n1', output: 'true' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    bool isSameTree(TreeNode* p, TreeNode* q) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public boolean isSameTree(TreeNode p, TreeNode q) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def isSameTree(self, p: TreeNode, q: TreeNode) -> bool:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    bool isSameTree(TreeNode* p, TreeNode* q) {\n        if (!p && !q) return true;\n        if (!p || !q) return false;\n        return p->val == q->val && isSameTree(p->left, q->left) && isSameTree(p->right, q->right);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public boolean isSameTree(TreeNode p, TreeNode q) {\n        if (p == null && q == null) return true;\n        if (p == null || q == null) return false;\n        return p.val == q.val && isSameTree(p.left, q.left) && isSameTree(p.right, q.right);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def isSameTree(self, p: TreeNode, q: TreeNode) -> bool:\n        if not p and not q:\n            return True\n        if not p or not q:\n            return False\n        return p.val == q.val and self.isSameTree(p.left, q.left) and self.isSameTree(p.right, q.right)' },
-    ],
-  },
-  {
-    title: 'Diameter of Binary Tree',
-    problemNumber: 543,
-    description: 'Given the `root` of a binary tree, return the length of the diameter of the tree.\n\nThe diameter of a binary tree is the length of the longest path between any two nodes in a tree. This path may or may not pass through the `root`.\n\nThe length of a path between two nodes is represented by the number of edges between them.',
-    difficulty: 'easy',
-    tags: 'tree',
-    harnessType: 'tree-int',
-    methodName: 'diameterOfBinaryTree',
-    visibleTestCases: [
-      { input: '1 2 3 4 5', output: '3', explanation: 'Path 4→2→1→3 (or 5→2→1→3) has 3 edges.' },
-      { input: '1 2', output: '1', explanation: 'Single edge.' },
+      { input: '1 2 3', output: '1', explanation: 'Node 1 tilt = |2-3| = 1. Leaves have 0 tilt. Total = 1.' },
+      { input: '4 2 9 3 5 null 7', output: '15', explanation: 'Node 2 tilt = |3-5| = 2. Node 9 tilt = 7. Node 4 tilt = |10-16| = 6. Total = 15.' },
     ],
     hiddenTestCases: [
       { input: '1', output: '0' },
-      { input: '1 2 3', output: '2' },
+      { input: '1 2', output: '2' },
+      { input: '21 7 14 1 1 2 2 3 3', output: '9' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int diameterOfBinaryTree(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public int diameterOfBinaryTree(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def diameterOfBinaryTree(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int findTilt(TreeNode* root) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int findTilt(TreeNode root) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def findTilt(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int diameterOfBinaryTree(TreeNode* root) {\n        int best = 0;\n        height(root, best);\n        return best;\n    }\nprivate:\n    int height(TreeNode* node, int& best) {\n        if (!node) return 0;\n        int l = height(node->left, best);\n        int r = height(node->right, best);\n        best = max(best, l + r);\n        return 1 + max(l, r);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    private int best = 0;\n    public int diameterOfBinaryTree(TreeNode root) {\n        height(root);\n        return best;\n    }\n    private int height(TreeNode node) {\n        if (node == null) return 0;\n        int l = height(node.left);\n        int r = height(node.right);\n        best = Math.max(best, l + r);\n        return 1 + Math.max(l, r);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def diameterOfBinaryTree(self, root: TreeNode) -> int:\n        self.best = 0\n        def height(node):\n            if not node:\n                return 0\n            l = height(node.left)\n            r = height(node.right)\n            self.best = max(self.best, l + r)\n            return 1 + max(l, r)\n        height(root)\n        return self.best' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int findTilt(TreeNode* root) {\n        int total = 0;\n        dfs(root, total);\n        return total;\n    }\nprivate:\n    int dfs(TreeNode* n, int& total) {\n        if (!n) return 0;\n        int l = dfs(n->left, total);\n        int r = dfs(n->right, total);\n        total += abs(l - r);\n        return l + r + n->val;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    private int total = 0;\n    public int findTilt(TreeNode root) {\n        dfs(root);\n        return total;\n    }\n    private int dfs(TreeNode n) {\n        if (n == null) return 0;\n        int l = dfs(n.left);\n        int r = dfs(n.right);\n        total += Math.abs(l - r);\n        return l + r + n.val;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def findTilt(self, root: TreeNode) -> int:\n        self.total = 0\n        def dfs(n):\n            if not n:\n                return 0\n            l = dfs(n.left)\n            r = dfs(n.right)\n            self.total += abs(l - r)\n            return l + r + n.val\n        dfs(root)\n        return self.total' },
     ],
   },
+
+  // ═══════════ MEDIUM (8) ═══════════
   {
-    title: 'Balanced Binary Tree',
-    problemNumber: 110,
-    description: 'Given a binary tree, determine if it is height-balanced.\n\nA binary tree is height-balanced if the left and right subtrees of every node differ in height by no more than 1.',
-    difficulty: 'easy',
-    tags: 'tree',
-    harnessType: 'tree-bool',
-    methodName: 'isBalanced',
-    visibleTestCases: [
-      { input: '3 9 20 null null 15 7', output: 'true', explanation: 'All subtrees balanced.' },
-      { input: '1 2 2 3 3 null null 4 4', output: 'false', explanation: 'Left subtree deeper than right.' },
-    ],
-    hiddenTestCases: [
-      { input: 'null', output: 'true' },
-      { input: '1', output: 'true' },
-      { input: '1 2 3 4', output: 'false' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    bool isBalanced(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public boolean isBalanced(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def isBalanced(self, root: TreeNode) -> bool:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    bool isBalanced(TreeNode* root) {\n        return check(root) != -1;\n    }\nprivate:\n    int check(TreeNode* node) {\n        if (!node) return 0;\n        int l = check(node->left);\n        if (l == -1) return -1;\n        int r = check(node->right);\n        if (r == -1) return -1;\n        if (abs(l - r) > 1) return -1;\n        return 1 + max(l, r);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public boolean isBalanced(TreeNode root) {\n        return check(root) != -1;\n    }\n    private int check(TreeNode node) {\n        if (node == null) return 0;\n        int l = check(node.left);\n        if (l == -1) return -1;\n        int r = check(node.right);\n        if (r == -1) return -1;\n        if (Math.abs(l - r) > 1) return -1;\n        return 1 + Math.max(l, r);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def isBalanced(self, root: TreeNode) -> bool:\n        return self.check(root) != -1\n    def check(self, node):\n        if not node:\n            return 0\n        l = self.check(node.left)\n        if l == -1:\n            return -1\n        r = self.check(node.right)\n        if r == -1:\n            return -1\n        if abs(l - r) > 1:\n            return -1\n        return 1 + max(l, r)' },
-    ],
-  },
-  {
-    title: 'Binary Tree Level Order Traversal',
-    problemNumber: 102,
-    description: 'Given the `root` of a binary tree, return the level order traversal of its nodes\' values (i.e., from left to right, level by level).\n\n**Output format:** One line per level, values space-separated.',
-    difficulty: 'medium',
-    tags: 'tree',
-    harnessType: 'tree-list-of-lists',
-    methodName: 'levelOrder',
-    visibleTestCases: [
-      { input: '3 9 20 null null 15 7', output: '3\n9 20\n15 7', explanation: 'Level 0: [3], Level 1: [9,20], Level 2: [15,7].' },
-      { input: '1', output: '1', explanation: 'Single node.' },
-    ],
-        hiddenTestCases: [
-      { input: '1', output: '1' },
-      { input: '1 2 3 4 5', output: '1\n2 3\n4 5' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<vector<int>> levelOrder(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def levelOrder(self, root: TreeNode) -> List[List[int]]:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<vector<int>> levelOrder(TreeNode* root) {\n        vector<vector<int>> res;\n        if (!root) return res;\n        queue<TreeNode*> q;\n        q.push(root);\n        while (!q.empty()) {\n            int sz = q.size();\n            vector<int> level;\n            for (int i = 0; i < sz; i++) {\n                TreeNode* node = q.front(); q.pop();\n                level.push_back(node->val);\n                if (node->left) q.push(node->left);\n                if (node->right) q.push(node->right);\n            }\n            res.push_back(level);\n        }\n        return res;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> res = new ArrayList<>();\n        if (root == null) return res;\n        Queue<TreeNode> q = new LinkedList<>();\n        q.offer(root);\n        while (!q.isEmpty()) {\n            int sz = q.size();\n            List<Integer> level = new ArrayList<>();\n            for (int i = 0; i < sz; i++) {\n                TreeNode node = q.poll();\n                level.add(node.val);\n                if (node.left != null) q.offer(node.left);\n                if (node.right != null) q.offer(node.right);\n            }\n            res.add(level);\n        }\n        return res;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def levelOrder(self, root: TreeNode) -> List[List[int]]:\n        res = []\n        if not root:\n            return res\n        q = deque([root])\n        while q:\n            level = []\n            for _ in range(len(q)):\n                node = q.popleft()\n                level.append(node.val)\n                if node.left: q.append(node.left)\n                if node.right: q.append(node.right)\n            res.append(level)\n        return res' },
-    ],
-  },
-  {
-    title: 'Binary Tree Right Side View',
-    problemNumber: 199,
-    description: 'Given the `root` of a binary tree, imagine yourself standing on the right side of it, return the values of the nodes you can see ordered from top to bottom.',
-    difficulty: 'medium',
-    tags: 'tree',
-    harnessType: 'tree-list',
-    methodName: 'rightSideView',
-    visibleTestCases: [
-      { input: '1 2 3 null 5 null 4', output: '1 3 4', explanation: 'Rightmost at each level: 1, 3, 4.' },
-      { input: '1 2 3 4 null null null 5', output: '1 3 4 5', explanation: 'Rightmost at each level.' },
-    ],
-    hiddenTestCases: [
-      { input: '1 null 3', output: '1 3' },
-      { input: '1 2', output: '1 2' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<int> rightSideView(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def rightSideView(self, root: TreeNode) -> List[int]:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<int> rightSideView(TreeNode* root) {\n        vector<int> res;\n        if (!root) return res;\n        queue<TreeNode*> q;\n        q.push(root);\n        while (!q.empty()) {\n            int sz = q.size();\n            for (int i = 0; i < sz; i++) {\n                TreeNode* node = q.front(); q.pop();\n                if (i == sz - 1) res.push_back(node->val);\n                if (node->left) q.push(node->left);\n                if (node->right) q.push(node->right);\n            }\n        }\n        return res;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        if (root == null) return res;\n        Queue<TreeNode> q = new LinkedList<>();\n        q.offer(root);\n        while (!q.isEmpty()) {\n            int sz = q.size();\n            for (int i = 0; i < sz; i++) {\n                TreeNode node = q.poll();\n                if (i == sz - 1) res.add(node.val);\n                if (node.left != null) q.offer(node.left);\n                if (node.right != null) q.offer(node.right);\n            }\n        }\n        return res;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def rightSideView(self, root: TreeNode) -> List[int]:\n        res = []\n        if not root:\n            return res\n        q = deque([root])\n        while q:\n            sz = len(q)\n            for i in range(sz):\n                node = q.popleft()\n                if i == sz - 1:\n                    res.append(node.val)\n                if node.left: q.append(node.left)\n                if node.right: q.append(node.right)\n        return res' },
-    ],
-  },
-  {
-    title: 'Binary Tree Zigzag Level Order Traversal',
-    problemNumber: 103,
-    description: 'Given the `root` of a binary tree, return the zigzag level order traversal of its nodes\' values (i.e., from left to right, then right to left for the next level and alternate between).\n\n**Output format:** One line per level, values space-separated.',
-    difficulty: 'medium',
-    tags: 'tree',
-    harnessType: 'tree-list-of-lists',
-    methodName: 'zigzagLevelOrder',
-    visibleTestCases: [
-      { input: '3 9 20 null null 15 7', output: '3\n20 9\n15 7', explanation: 'Level 0: [3], Level 1 reversed: [20,9], Level 2: [15,7].' },
-      { input: '1', output: '1', explanation: 'Single node.' },
-    ],
-    hiddenTestCases: [
-      { input: '1 2 3 4 5', output: '1\n3 2\n4 5' },
-      { input: '1 2 3', output: '1\n3 2' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def zigzagLevelOrder(self, root: TreeNode) -> List[List[int]]:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {\n        vector<vector<int>> res;\n        if (!root) return res;\n        queue<TreeNode*> q;\n        q.push(root);\n        bool leftToRight = true;\n        while (!q.empty()) {\n            int sz = q.size();\n            vector<int> level(sz);\n            for (int i = 0; i < sz; i++) {\n                TreeNode* node = q.front(); q.pop();\n                int idx = leftToRight ? i : (sz - 1 - i);\n                level[idx] = node->val;\n                if (node->left) q.push(node->left);\n                if (node->right) q.push(node->right);\n            }\n            res.push_back(level);\n            leftToRight = !leftToRight;\n        }\n        return res;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {\n        List<List<Integer>> res = new ArrayList<>();\n        if (root == null) return res;\n        Queue<TreeNode> q = new LinkedList<>();\n        q.offer(root);\n        boolean leftToRight = true;\n        while (!q.isEmpty()) {\n            int sz = q.size();\n            List<Integer> level = new ArrayList<>(Collections.nCopies(sz, 0));\n            for (int i = 0; i < sz; i++) {\n                TreeNode node = q.poll();\n                int idx = leftToRight ? i : (sz - 1 - i);\n                level.set(idx, node.val);\n                if (node.left != null) q.offer(node.left);\n                if (node.right != null) q.offer(node.right);\n            }\n            res.add(level);\n            leftToRight = !leftToRight;\n        }\n        return res;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def zigzagLevelOrder(self, root: TreeNode) -> List[List[int]]:\n        res = []\n        if not root:\n            return res\n        q = deque([root])\n        left_to_right = True\n        while q:\n            sz = len(q)\n            level = [0] * sz\n            for i in range(sz):\n                node = q.popleft()\n                idx = i if left_to_right else (sz - 1 - i)\n                level[idx] = node.val\n                if node.left: q.append(node.left)\n                if node.right: q.append(node.right)\n            res.append(level)\n            left_to_right = not left_to_right\n        return res' },
-    ],
-  },
-  {
-    title: 'Kth Smallest Element in a BST',
-    problemNumber: 230,
-    description: 'Given the `root` of a binary search tree, and an integer `k`, return the `k-th` smallest value (1-indexed) of all the values of the nodes in the tree.\n\n**Input format:** Line 1 = tree (level order), Line 2 = k.',
+    title: 'Path Sum III',
+    problemNumber: 437,
     difficulty: 'medium',
     tags: 'tree',
     harnessType: 'tree-int-int',
-    methodName: 'kthSmallest',
+    methodName: 'pathSum',
+    description: 'Given the `root` of a binary tree and an integer `targetSum`, return the number of paths where the sum of the values along the path equals `targetSum`.\n\nThe path does not need to start or end at the root or a leaf, but it must go downwards (i.e., traveling only from parent nodes to child nodes).\n\n**Input format:** Line 1 = tree, Line 2 = targetSum.',
     visibleTestCases: [
-      { input: '3 1 4 null 2\n1', output: '1', explanation: 'In-order: 1,2,3,4 — 1st smallest is 1.' },
-      { input: '5 3 6 2 4 null null 1\n3', output: '3', explanation: 'In-order: 1,2,3,4,5,6 — 3rd smallest is 3.' },
+      { input: '10 5 -3 3 2 null 11 3 -2 null 1\n8', output: '3', explanation: 'Paths summing to 8: [5,3], [-3,11], [5,2,1].' },
+      { input: '10\n5', output: '0', explanation: 'No path sums to 5.' },
     ],
     hiddenTestCases: [
-      { input: '1\n1', output: '1' },
-      { input: '2 1\n2', output: '2' },
+      { input: '1 2 3\n3', output: '2' },
+      { input: '1 -2 -3\n-1', output: '1' },
+      { input: '0 1 1\n1', output: '4' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int kthSmallest(TreeNode* root, int k) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def kthSmallest(self, root: TreeNode, k: int) -> int:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int pathSum(TreeNode* root, int targetSum) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int pathSum(TreeNode root, int targetSum) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def pathSum(self, root: TreeNode, targetSum: int) -> int:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int kthSmallest(TreeNode* root, int k) {\n        vector<int> vals;\n        inorder(root, vals);\n        return vals[k - 1];\n    }\nprivate:\n    void inorder(TreeNode* node, vector<int>& vals) {\n        if (!node) return;\n        inorder(node->left, vals);\n        vals.push_back(node->val);\n        inorder(node->right, vals);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        List<Integer> vals = new ArrayList<>();\n        inorder(root, vals);\n        return vals.get(k - 1);\n    }\n    private void inorder(TreeNode node, List<Integer> vals) {\n        if (node == null) return;\n        inorder(node.left, vals);\n        vals.add(node.val);\n        inorder(node.right, vals);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def kthSmallest(self, root: TreeNode, k: int) -> int:\n        vals = []\n        def inorder(node):\n            if not node: return\n            inorder(node.left)\n            vals.append(node.val)\n            inorder(node.right)\n        inorder(root)\n        return vals[k - 1]' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int pathSum(TreeNode* root, int targetSum) {\n        if (!root) return 0;\n        return helper(root, targetSum) + pathSum(root->left, targetSum) + pathSum(root->right, targetSum);\n    }\nprivate:\n    int helper(TreeNode* n, long long target) {\n        if (!n) return 0;\n        long long rem = target - n->val;\n        return (rem == 0 ? 1 : 0) + helper(n->left, rem) + helper(n->right, rem);\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public int pathSum(TreeNode root, int targetSum) {\n        if (root == null) return 0;\n        return helper(root, (long) targetSum) + pathSum(root.left, targetSum) + pathSum(root.right, targetSum);\n    }\n    private int helper(TreeNode n, long target) {\n        if (n == null) return 0;\n        long rem = target - n.val;\n        return (rem == 0 ? 1 : 0) + helper(n.left, rem) + helper(n.right, rem);\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def pathSum(self, root: TreeNode, targetSum: int) -> int:\n        if not root:\n            return 0\n        def helper(n, target):\n            if not n:\n                return 0\n            rem = target - n.val\n            return (1 if rem == 0 else 0) + helper(n.left, rem) + helper(n.right, rem)\n        return helper(root, targetSum) + self.pathSum(root.left, targetSum) + self.pathSum(root.right, targetSum)' },
     ],
   },
+
   {
-    title: 'Lowest Common Ancestor of a Binary Search Tree',
-    problemNumber: 235,
-    description: 'Given a binary search tree (BST), find the lowest common ancestor (LCA) of two given nodes in the BST.\n\nThe LCA is defined between two nodes `p` and `q` as the lowest node in the tree that has both `p` and `q` as descendants (where a node can be a descendant of itself).\n\n**Input format:** Line 1 = tree, Line 2 = p value, Line 3 = q value. Output is the LCA node\'s value.',
-    difficulty: 'easy',
-    tags: 'tree',
-    harnessType: 'tree-two-values-int',
-    methodName: 'lowestCommonAncestor',
-    visibleTestCases: [
-      { input: '6 2 8 0 4 7 9 null null 3 5\n2\n8', output: '6', explanation: '2 is in left subtree of 6, 8 is in right subtree — LCA is 6.' },
-      { input: '6 2 8 0 4 7 9 null null 3 5\n2\n4', output: '2', explanation: '4 is descendant of 2 — LCA is 2.' },
-    ],
-    hiddenTestCases: [
-      { input: '2 1\n2\n1', output: '2' },
-      { input: '2 1\n1\n2', output: '2' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def lowestCommonAncestor(self, root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {\n        while (root) {\n            if (p->val < root->val && q->val < root->val) root = root->left;\n            else if (p->val > root->val && q->val > root->val) root = root->right;\n            else return root;\n        }\n        return nullptr;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        while (root != null) {\n            if (p.val < root.val && q.val < root.val) root = root.left;\n            else if (p.val > root.val && q.val > root.val) root = root.right;\n            else return root;\n        }\n        return null;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def lowestCommonAncestor(self, root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None' },
-    ],
-  },
-  {
-    title: 'Lowest Common Ancestor of a Binary Tree',
-    problemNumber: 236,
-    description: 'Given a binary tree, find the lowest common ancestor (LCA) of two given nodes in the tree.\n\nThe LCA is defined between two nodes `p` and `q` as the lowest node in the tree that has both `p` and `q` as descendants (where a node can be a descendant of itself).\n\n**Input format:** Line 1 = tree, Line 2 = p value, Line 3 = q value. Output is the LCA node\'s value.',
+    title: 'Flatten Binary Tree to Linked List',
+    problemNumber: 114,
     difficulty: 'medium',
     tags: 'tree',
-    harnessType: 'tree-two-values-int',
-    methodName: 'lowestCommonAncestor',
+    harnessType: 'void-inplace-tree',
+    methodName: 'flatten',
+    description: 'Given the `root` of a binary tree, flatten the tree into a "linked list":\n- The "linked list" should use the same `TreeNode` class where the `right` child pointer points to the next node in the list and the `left` child pointer is always `null`.\n- The "linked list" should be in the same order as a pre-order traversal of the binary tree.\n\n**Output format:** The flattened tree, level-order serialized.',
     visibleTestCases: [
-      { input: '3 5 1 6 2 0 8 null null 7 4\n5\n1', output: '3', explanation: '5 in left subtree, 1 in right subtree — LCA is 3.' },
-      { input: '3 5 1 6 2 0 8 null null 7 4\n5\n4', output: '5', explanation: '4 is descendant of 5 — LCA is 5.' },
+      { input: '1 2 5 3 4 null 6', output: '1 null 2 null 3 null 4 null 5 null 6', explanation: 'Preorder 1→2→3→4→5→6, all linked as right children.' },
+      { input: '0', output: '0', explanation: 'Single node.' },
     ],
     hiddenTestCases: [
-      { input: '1 2\n1\n2', output: '1' },
-      { input: '1 2\n2\n1', output: '1' },
+      { input: '1 2', output: '1 null 2' },
+      { input: '1 null 2', output: '1 null 2' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def lowestCommonAncestor(self, root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    void flatten(TreeNode* root) {\n        // Write your code here\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public void flatten(TreeNode root) {\n        // Write your code here\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def flatten(self, root: TreeNode) -> None:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {\n        if (!root || root == p || root == q) return root;\n        TreeNode* left = lowestCommonAncestor(root->left, p, q);\n        TreeNode* right = lowestCommonAncestor(root->right, p, q);\n        if (left && right) return root;\n        return left ? left : right;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        if (root == null || root == p || root == q) return root;\n        TreeNode left = lowestCommonAncestor(root.left, p, q);\n        TreeNode right = lowestCommonAncestor(root.right, p, q);\n        if (left != null && right != null) return root;\n        return left != null ? left : right;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def lowestCommonAncestor(self, root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:\n        if not root or root is p or root is q:\n            return root\n        left = self.lowestCommonAncestor(root.left, p, q)\n        right = self.lowestCommonAncestor(root.right, p, q)\n        if left and right:\n            return root\n        return left if left else right' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    void flatten(TreeNode* root) {\n        TreeNode* cur = root;\n        while (cur) {\n            if (cur->left) {\n                TreeNode* rightmost = cur->left;\n                while (rightmost->right) rightmost = rightmost->right;\n                rightmost->right = cur->right;\n                cur->right = cur->left;\n                cur->left = nullptr;\n            }\n            cur = cur->right;\n        }\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public void flatten(TreeNode root) {\n        TreeNode cur = root;\n        while (cur != null) {\n            if (cur.left != null) {\n                TreeNode rightmost = cur.left;\n                while (rightmost.right != null) rightmost = rightmost.right;\n                rightmost.right = cur.right;\n                cur.right = cur.left;\n                cur.left = null;\n            }\n            cur = cur.right;\n        }\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def flatten(self, root: TreeNode) -> None:\n        cur = root\n        while cur:\n            if cur.left:\n                rightmost = cur.left\n                while rightmost.right:\n                    rightmost = rightmost.right\n                rightmost.right = cur.right\n                cur.right = cur.left\n                cur.left = None\n            cur = cur.right' },
     ],
   },
+
   {
-    title: 'Validate Binary Search Tree',
-    problemNumber: 98,
-    description: 'Given the `root` of a binary tree, determine if it is a valid binary search tree (BST).\n\nA valid BST has:\n- The left subtree of a node contains only nodes with keys less than the node\'s key.\n- The right subtree of a node contains only nodes with keys greater than the node\'s key.\n- Both left and right subtrees must also be BSTs.',
+    title: 'Convert BST to Greater Tree',
+    problemNumber: 538,
     difficulty: 'medium',
     tags: 'tree',
-    harnessType: 'tree-bool',
-    methodName: 'isValidBST',
+    harnessType: 'tree-tree',
+    methodName: 'convertBST',
+    description: 'Given the `root` of a Binary Search Tree (BST), convert it to a Greater Tree such that every key of the original BST is changed to the original key plus the sum of all keys greater than the original key in BST.\n\nReturn the new root.',
     visibleTestCases: [
-      { input: '2 1 3', output: 'true', explanation: 'Valid BST.' },
-      { input: '5 1 4 null null 3 6', output: 'false', explanation: '4 is right child of 5 but has child 3 < 5.' },
-    ],
-    hiddenTestCases: [
-      { input: 'null', output: 'true' },
-      { input: '1', output: 'true' },
-      { input: '5 4 6 null null 3 7', output: 'false' },
-    ],
-    startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    bool isValidBST(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public boolean isValidBST(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def isValidBST(self, root: TreeNode) -> bool:\n        # Write your code here\n        pass' },
-    ],
-    referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    bool isValidBST(TreeNode* root) {\n        return validate(root, LONG_MIN, LONG_MAX);\n    }\nprivate:\n    bool validate(TreeNode* node, long low, long high) {\n        if (!node) return true;\n        if (node->val <= low || node->val >= high) return false;\n        return validate(node->left, low, node->val) && validate(node->right, node->val, high);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public boolean isValidBST(TreeNode root) {\n        return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);\n    }\n    private boolean validate(TreeNode node, long low, long high) {\n        if (node == null) return true;\n        if (node.val <= low || node.val >= high) return false;\n        return validate(node.left, low, node.val) && validate(node.right, node.val, high);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def isValidBST(self, root: TreeNode) -> bool:\n        def validate(node, low, high):\n            if not node:\n                return True\n            if node.val <= low or node.val >= high:\n                return False\n            return validate(node.left, low, node.val) and validate(node.right, node.val, high)\n        return validate(root, float(\'-inf\'), float(\'inf\'))' },
-    ],
-  },
-  {
-    title: 'Count Good Nodes in Binary Tree',
-    problemNumber: 1448,
-    description: 'Given a binary tree `root`, a node X in the tree is named **good** if in the path from root to X there are no nodes with a value greater than X.\n\nReturn the number of **good** nodes in the binary tree.',
-    difficulty: 'medium',
-    tags: 'tree',
-    harnessType: 'tree-int',
-    methodName: 'goodNodes',
-    visibleTestCases: [
-      { input: '3 1 4 3 null 1 5', output: '4', explanation: 'Good nodes: 3, 3 (left of 1), 4, 5.' },
-      { input: '3 3 null 4 2', output: '3', explanation: 'Good nodes: 3, 3, 4.' },
+      { input: '4 1 6 0 2 5 7 null null null 3 null null null 8', output: '30 36 21 36 35 26 15 null null null 33 null null null 8', explanation: 'Each key is added to the sum of all greater keys.' },
+      { input: '0 null 1', output: '1 null 1', explanation: '0 becomes 1 (0+1), 1 stays 1.' },
     ],
     hiddenTestCases: [
       { input: '1', output: '1' },
-      { input: '1 2 3', output: '3' },
+      { input: '2 1', output: '2 3' },
+      { input: '1 0 2', output: '3 3 2' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int goodNodes(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public int goodNodes(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def goodNodes(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* convertBST(TreeNode* root) {\n        // Write your code here\n        return root;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode convertBST(TreeNode root) {\n        // Write your code here\n        return root;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def convertBST(self, root: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int goodNodes(TreeNode* root) {\n        return dfs(root, INT_MIN);\n    }\nprivate:\n    int dfs(TreeNode* node, int maxSoFar) {\n        if (!node) return 0;\n        int count = node->val >= maxSoFar ? 1 : 0;\n        int newMax = max(maxSoFar, node->val);\n        return count + dfs(node->left, newMax) + dfs(node->right, newMax);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public int goodNodes(TreeNode root) {\n        return dfs(root, Integer.MIN_VALUE);\n    }\n    private int dfs(TreeNode node, int maxSoFar) {\n        if (node == null) return 0;\n        int count = node.val >= maxSoFar ? 1 : 0;\n        int newMax = Math.max(maxSoFar, node.val);\n        return count + dfs(node.left, newMax) + dfs(node.right, newMax);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def goodNodes(self, root: TreeNode) -> int:\n        def dfs(node, max_so_far):\n            if not node:\n                return 0\n            count = 1 if node.val >= max_so_far else 0\n            new_max = max(max_so_far, node.val)\n            return count + dfs(node.left, new_max) + dfs(node.right, new_max)\n        return dfs(root, float(\'-inf\'))' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* convertBST(TreeNode* root) {\n        int sum = 0;\n        dfs(root, sum);\n        return root;\n    }\nprivate:\n    void dfs(TreeNode* n, int& sum) {\n        if (!n) return;\n        dfs(n->right, sum);\n        sum += n->val;\n        n->val = sum;\n        dfs(n->left, sum);\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    private int sum = 0;\n    public TreeNode convertBST(TreeNode root) {\n        dfs(root);\n        return root;\n    }\n    private void dfs(TreeNode n) {\n        if (n == null) return;\n        dfs(n.right);\n        sum += n.val;\n        n.val = sum;\n        dfs(n.left);\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def convertBST(self, root: TreeNode) -> TreeNode:\n        self.total = 0\n        def dfs(n):\n            if not n:\n                return\n            dfs(n.right)\n            self.total += n.val\n            n.val = self.total\n            dfs(n.left)\n        dfs(root)\n        return root' },
     ],
   },
+
   {
-    title: 'Construct Binary Tree from Preorder and Inorder Traversal',
-    problemNumber: 105,
-    description: 'Given two integer arrays `preorder` and `inorder` where `preorder` is the preorder traversal of a binary tree and `inorder` is the inorder traversal of the same tree, construct and return the binary tree.\n\n**Input format:** Line 1 = preorder array, Line 2 = inorder array.\n\n**Output format:** Level-order array of the constructed tree.',
+    title: 'Lowest Common Ancestor of Deepest Leaves',
+    problemNumber: 1123,
     difficulty: 'medium',
     tags: 'tree',
-    harnessType: 'two-arrays-tree',
-    methodName: 'buildTree',
+    harnessType: 'tree-tree',
+    methodName: 'lcaDeepestLeaves',
+    description: 'Given the `root` of a binary tree, return the lowest common ancestor of its deepest leaves.\n\nRecall that:\n- The node of a binary tree is a leaf if and only if it has no children\n- The depth of the root of the tree is `0`. If the depth of a node is `d`, the depth of each of its children is `d + 1`.\n- The lowest common ancestor of a set `S` of nodes, is the node `A` with the largest depth such that every node in `S` is in the subtree with root `A`.\n\n**Output format:** The subtree rooted at the LCA, level-order serialized.',
     visibleTestCases: [
-      { input: '3 9 20 15 7\n9 3 15 20 7', output: '3 9 20 null null 15 7', explanation: 'Root 3; left subtree [9]; right subtree [20,15,7].' },
-      { input: '1 2\n2 1', output: '1 2', explanation: 'Root 1 with left child 2.' },
+      { input: '3 5 1 6 2 0 8 null null 7 4', output: '2 7 4', explanation: 'Deepest leaves are 7 and 4 under node 2 — LCA is 2.' },
+      { input: '1', output: '1', explanation: 'Single node.' },
     ],
     hiddenTestCases: [
-      { input: '-1\n-1', output: '-1' },
-      { input: '1 2 3\n2 1 3', output: '1 2 3' },
+      { input: '0 1 3 null 2', output: '2' },
+      { input: '0 1 3', output: '0 1 3' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode buildTree(int[] preorder, int[] inorder) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def buildTree(self, preorder: List[int], inorder: List[int]) -> TreeNode:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* lcaDeepestLeaves(TreeNode* root) {\n        // Write your code here\n        return root;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode lcaDeepestLeaves(TreeNode root) {\n        // Write your code here\n        return root;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def lcaDeepestLeaves(self, root: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {\n        unordered_map<int, int> inMap;\n        for (int i = 0; i < inorder.size(); i++) inMap[inorder[i]] = i;\n        return build(preorder, inMap, 0, preorder.size() - 1, 0);\n    }\nprivate:\n    TreeNode* build(vector<int>& pre, unordered_map<int,int>& inMap, int preL, int preR, int inL) {\n        if (preL > preR) return nullptr;\n        TreeNode* root = new TreeNode(pre[preL]);\n        int inIdx = inMap[pre[preL]];\n        int leftSize = inIdx - inL;\n        root->left = build(pre, inMap, preL + 1, preL + leftSize, inL);\n        root->right = build(pre, inMap, preL + leftSize + 1, preR, inIdx + 1);\n        return root;\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    private Map<Integer, Integer> inMap = new HashMap<>();\n    public TreeNode buildTree(int[] preorder, int[] inorder) {\n        for (int i = 0; i < inorder.length; i++) inMap.put(inorder[i], i);\n        return build(preorder, 0, preorder.length - 1, 0);\n    }\n    private TreeNode build(int[] pre, int preL, int preR, int inL) {\n        if (preL > preR) return null;\n        TreeNode root = new TreeNode(pre[preL]);\n        int inIdx = inMap.get(pre[preL]);\n        int leftSize = inIdx - inL;\n        root.left = build(pre, preL + 1, preL + leftSize, inL);\n        root.right = build(pre, preL + leftSize + 1, preR, inIdx + 1);\n        return root;\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def buildTree(self, preorder: List[int], inorder: List[int]) -> TreeNode:\n        in_map = {v: i for i, v in enumerate(inorder)}\n        def build(pre_l, pre_r, in_l):\n            if pre_l > pre_r:\n                return None\n            root = TreeNode(preorder[pre_l])\n            in_idx = in_map[preorder[pre_l]]\n            left_size = in_idx - in_l\n            root.left = build(pre_l + 1, pre_l + left_size, in_l)\n            root.right = build(pre_l + left_size + 1, pre_r, in_idx + 1)\n            return root\n        return build(0, len(preorder) - 1, 0)' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* lcaDeepestLeaves(TreeNode* root) {\n        return dfs(root).first;\n    }\nprivate:\n    pair<TreeNode*, int> dfs(TreeNode* n) {\n        if (!n) return {nullptr, 0};\n        auto l = dfs(n->left);\n        auto r = dfs(n->right);\n        if (l.second > r.second) return {l.first, l.second + 1};\n        if (r.second > l.second) return {r.first, r.second + 1};\n        return {n, l.second + 1};\n    }\n};' },
+            { language: 'Java', completeCode: 'class Solution {\n    public TreeNode lcaDeepestLeaves(TreeNode root) {\n        return (TreeNode) dfs(root)[0];\n    }\n    private Object[] dfs(TreeNode n) {\n        if (n == null) return new Object[]{null, 0};\n        Object[] l = dfs(n.left);\n        Object[] r = dfs(n.right);\n        int lh = (int) l[1], rh = (int) r[1];\n        if (lh > rh) return new Object[]{l[0], lh + 1};\n        if (rh > lh) return new Object[]{r[0], rh + 1};\n        return new Object[]{n, lh + 1};\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def lcaDeepestLeaves(self, root: TreeNode) -> TreeNode:\n        def dfs(n):\n            if not n:\n                return None, 0\n            ln, lh = dfs(n.left)\n            rn, rh = dfs(n.right)\n            if lh > rh:\n                return ln, lh + 1\n            if rh > lh:\n                return rn, rh + 1\n            return n, lh + 1\n        return dfs(root)[0]' },
     ],
   },
+
   {
-    title: 'Binary Tree Maximum Path Sum',
-    problemNumber: 124,
-    description: 'A path in a binary tree is a sequence of nodes where each pair of adjacent nodes in the sequence has an edge connecting them. A node can only appear in the sequence at most once. The path does not need to pass through the root.\n\nThe path sum of a path is the sum of the node\'s values in the path.\n\nGiven the `root` of a binary tree, return the maximum path sum of any non-empty path.',
+    title: 'Delete Leaves With a Given Value',
+    problemNumber: 1325,
+    difficulty: 'medium',
+    tags: 'tree',
+    harnessType: 'tree-int-tree',
+    methodName: 'removeLeafNodes',
+    description: 'Given a binary tree `root` and an integer `target`, delete all leaf nodes with value `target`.\n\nNote that once you delete a leaf node with value `target`, if its parent node becomes a leaf node and has the value `target`, it should also be deleted (you need to continue doing that until you cannot).\n\n**Input format:** Line 1 = tree, Line 2 = target.',
+    visibleTestCases: [
+      { input: '1 2 3 2 null 2 4\n2', output: '1 null 3 null 4', explanation: 'Cascade removes all 2-valued leaves.' },
+      { input: '1 3 3 3 2\n3', output: '1 3 null null 2', explanation: 'Removes all 3-valued leaves.' },
+    ],
+    hiddenTestCases: [
+      { input: '1 2 3\n2', output: '1 null 3' },
+      { input: '1 2\n2', output: '1' },
+      { input: '1 2 3\n1', output: '1 2 3' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* removeLeafNodes(TreeNode* root, int target) {\n        // Write your code here\n        return root;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode removeLeafNodes(TreeNode root, int target) {\n        // Write your code here\n        return root;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def removeLeafNodes(self, root: TreeNode, target: int) -> TreeNode:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* removeLeafNodes(TreeNode* root, int target) {\n        if (!root) return nullptr;\n        root->left = removeLeafNodes(root->left, target);\n        root->right = removeLeafNodes(root->right, target);\n        if (!root->left && !root->right && root->val == target) return nullptr;\n        return root;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public TreeNode removeLeafNodes(TreeNode root, int target) {\n        if (root == null) return null;\n        root.left = removeLeafNodes(root.left, target);\n        root.right = removeLeafNodes(root.right, target);\n        if (root.left == null && root.right == null && root.val == target) return null;\n        return root;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def removeLeafNodes(self, root: TreeNode, target: int) -> TreeNode:\n        if not root:\n            return None\n        root.left = self.removeLeafNodes(root.left, target)\n        root.right = self.removeLeafNodes(root.right, target)\n        if not root.left and not root.right and root.val == target:\n            return None\n        return root' },
+    ],
+  },
+
+  {
+    title: 'Longest Univalue Path',
+    problemNumber: 687,
+    difficulty: 'medium',
+    tags: 'tree',
+    harnessType: 'tree-int',
+    methodName: 'longestUnivaluePath',
+    description: 'Given the `root` of a binary tree, return the length of the longest path, where each node in the path has the same value. This path may or may not pass through the root.\n\nThe length of the path between two nodes is represented by the number of edges between them.',
+    visibleTestCases: [
+      { input: '5 4 5 1 1 null 5', output: '2', explanation: 'Longest univalue path: 5→5→5, edges = 2.' },
+      { input: '1 4 5 4 4 null 5', output: '2', explanation: '4→4→4 path, edges = 2.' },
+    ],
+    hiddenTestCases: [
+      { input: '1', output: '0' },
+      { input: '1 1', output: '1' },
+      { input: '1 1 1', output: '2' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int longestUnivaluePath(TreeNode* root) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int longestUnivaluePath(TreeNode root) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def longestUnivaluePath(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int longestUnivaluePath(TreeNode* root) {\n        int best = 0;\n        dfs(root, best);\n        return best;\n    }\nprivate:\n    int dfs(TreeNode* n, int& best) {\n        if (!n) return 0;\n        int l = dfs(n->left, best);\n        int r = dfs(n->right, best);\n        int lExt = (n->left && n->left->val == n->val) ? l + 1 : 0;\n        int rExt = (n->right && n->right->val == n->val) ? r + 1 : 0;\n        best = max(best, lExt + rExt);\n        return max(lExt, rExt);\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    private int best = 0;\n    public int longestUnivaluePath(TreeNode root) {\n        dfs(root);\n        return best;\n    }\n    private int dfs(TreeNode n) {\n        if (n == null) return 0;\n        int l = dfs(n.left);\n        int r = dfs(n.right);\n        int lExt = (n.left != null && n.left.val == n.val) ? l + 1 : 0;\n        int rExt = (n.right != null && n.right.val == n.val) ? r + 1 : 0;\n        best = Math.max(best, lExt + rExt);\n        return Math.max(lExt, rExt);\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def longestUnivaluePath(self, root: TreeNode) -> int:\n        self.best = 0\n        def dfs(n):\n            if not n:\n                return 0\n            l = dfs(n.left)\n            r = dfs(n.right)\n            l_ext = l + 1 if n.left and n.left.val == n.val else 0\n            r_ext = r + 1 if n.right and n.right.val == n.val else 0\n            self.best = max(self.best, l_ext + r_ext)\n            return max(l_ext, r_ext)\n        dfs(root)\n        return self.best' },
+    ],
+  },
+
+  {
+    title: 'Binary Tree Pruning',
+    problemNumber: 814,
+    difficulty: 'medium',
+    tags: 'tree',
+    harnessType: 'tree-tree',
+    methodName: 'pruneTree',
+    description: 'Given the `root` of a binary tree, return the same tree where every subtree (of the given tree) not containing a `1` has been removed.\n\nA subtree of a node `node` is `node` plus every node that is a descendant of `node`.',
+    visibleTestCases: [
+      { input: '1 null 0 0 1', output: '1 null 0 null 1', explanation: 'Prunes left subtree of 0 (has no 1).' },
+      { input: '1 0 1 0 0 0 1', output: '1 null 1 null 1', explanation: 'Prunes all-0 subtrees.' },
+    ],
+    hiddenTestCases: [
+      { input: '1', output: '1' },
+      { input: '0 null 1', output: '0 null 1' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    TreeNode* pruneTree(TreeNode* root) {\n        // Write your code here\n        return root;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public TreeNode pruneTree(TreeNode root) {\n        // Write your code here\n        return root;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def pruneTree(self, root: TreeNode) -> TreeNode:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    TreeNode* pruneTree(TreeNode* root) {\n        if (!root) return nullptr;\n        root->left = pruneTree(root->left);\n        root->right = pruneTree(root->right);\n        if (!root->left && !root->right && root->val == 0) return nullptr;\n        return root;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public TreeNode pruneTree(TreeNode root) {\n        if (root == null) return null;\n        root.left = pruneTree(root.left);\n        root.right = pruneTree(root.right);\n        if (root.left == null && root.right == null && root.val == 0) return null;\n        return root;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def pruneTree(self, root: TreeNode) -> TreeNode:\n        if not root:\n            return None\n        root.left = self.pruneTree(root.left)\n        root.right = self.pruneTree(root.right)\n        if not root.left and not root.right and root.val == 0:\n            return None\n        return root' },
+    ],
+  },
+
+  {
+    title: 'Count Complete Tree Nodes',
+    problemNumber: 222,
+    difficulty: 'medium',
+    tags: 'tree',
+    harnessType: 'tree-int',
+    methodName: 'countNodes',
+    description: 'Given the `root` of a complete binary tree, return the number of the nodes in the tree.\n\nAccording to Wikipedia, every level, except possibly the last, is completely filled in a complete binary tree, and all nodes in the last level are as far left as possible.',
+    visibleTestCases: [
+      { input: '1 2 3 4 5 6', output: '6', explanation: '6 nodes.' },
+      { input: '1', output: '1', explanation: '1 node.' },
+    ],
+    hiddenTestCases: [
+      { input: '1 2 3 4 5 6 7 8 9', output: '9' },
+      { input: '1 2 3 4', output: '4' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int countNodes(TreeNode* root) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int countNodes(TreeNode root) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def countNodes(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int countNodes(TreeNode* root) {\n        if (!root) return 0;\n        int lh = height(root->left);\n        int rh = height(root->right);\n        if (lh == rh) return (1 << lh) + countNodes(root->right);\n        return (1 << rh) + countNodes(root->left);\n    }\nprivate:\n    int height(TreeNode* n) {\n        int h = 0;\n        while (n) { h++; n = n->left; }\n        return h;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public int countNodes(TreeNode root) {\n        if (root == null) return 0;\n        int lh = height(root.left);\n        int rh = height(root.right);\n        if (lh == rh) return (1 << lh) + countNodes(root.right);\n        return (1 << rh) + countNodes(root.left);\n    }\n    private int height(TreeNode n) {\n        int h = 0;\n        while (n != null) { h++; n = n.left; }\n        return h;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def countNodes(self, root: TreeNode) -> int:\n        if not root:\n            return 0\n        def height(n):\n            h = 0\n            while n:\n                h += 1\n                n = n.left\n            return h\n        lh = height(root.left)\n        rh = height(root.right)\n        if lh == rh:\n            return (1 << lh) + self.countNodes(root.right)\n        return (1 << rh) + self.countNodes(root.left)' },
+    ],
+  },
+
+  // ═══════════ HARD (4) ═══════════
+  {
+    title: 'Vertical Order Traversal of a Binary Tree',
+    problemNumber: 987,
+    difficulty: 'hard',
+    tags: 'tree',
+    harnessType: 'tree-list-of-lists',
+    methodName: 'verticalTraversal',
+    description: 'Given the `root` of a binary tree, calculate the vertical order traversal of the binary tree.\n\nFor each node at position `(row, col)`, its left and right children will be at positions `(row + 1, col - 1)` and `(row + 1, col + 1)` respectively. The root of the tree is at `(0, 0)`.\n\nThe vertical order traversal of a binary tree is a list of top-to-bottom orderings for each column index starting from the leftmost column and ending on the rightmost column. There may be multiple nodes in the same row and same column. In such a case, sort these nodes by their values.\n\n**Output format:** One line per column.',
+    visibleTestCases: [
+      { input: '3 9 20 null null 15 7', output: '9\n3 15\n20\n7', explanation: 'Columns from left to right: [9], [3,15], [20], [7].' },
+      { input: '1 2 3 4 5 6 7', output: '4\n2\n1 5 6\n3\n7', explanation: 'Columns from left to right.' },
+    ],
+    hiddenTestCases: [
+      { input: '1', output: '1' },
+      { input: '1 2 3', output: '2\n1\n3' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<vector<int>> verticalTraversal(TreeNode* root) {\n        // Write your code here\n        return {};\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public List<List<Integer>> verticalTraversal(TreeNode root) {\n        // Write your code here\n        return new ArrayList<>();\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def verticalTraversal(self, root: TreeNode) -> List[List[int]]:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<vector<int>> verticalTraversal(TreeNode* root) {\n        map<int, vector<pair<int, int>>> mp;\n        function<void(TreeNode*, int, int)> dfs = [&](TreeNode* n, int col, int row) {\n            if (!n) return;\n            mp[col].push_back({row, n->val});\n            dfs(n->left, col - 1, row + 1);\n            dfs(n->right, col + 1, row + 1);\n        };\n        dfs(root, 0, 0);\n        vector<vector<int>> res;\n        for (auto& [col, v] : mp) {\n            sort(v.begin(), v.end());\n            vector<int> col_vals;\n            for (auto& p : v) col_vals.push_back(p.second);\n            res.push_back(col_vals);\n        }\n        return res;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public List<List<Integer>> verticalTraversal(TreeNode root) {\n        TreeMap<Integer, List<int[]>> mp = new TreeMap<>();\n        dfs(root, 0, 0, mp);\n        List<List<Integer>> res = new ArrayList<>();\n        for (List<int[]> v : mp.values()) {\n            v.sort((a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);\n            List<Integer> col = new ArrayList<>();\n            for (int[] p : v) col.add(p[1]);\n            res.add(col);\n        }\n        return res;\n    }\n    private void dfs(TreeNode n, int col, int row, TreeMap<Integer, List<int[]>> mp) {\n        if (n == null) return;\n        mp.computeIfAbsent(col, k -> new ArrayList<>()).add(new int[]{row, n.val});\n        dfs(n.left, col - 1, row + 1, mp);\n        dfs(n.right, col + 1, row + 1, mp);\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def verticalTraversal(self, root: TreeNode) -> List[List[int]]:\n        mp = {}\n        def dfs(n, col, row):\n            if not n:\n                return\n            mp.setdefault(col, []).append((row, n.val))\n            dfs(n.left, col - 1, row + 1)\n            dfs(n.right, col + 1, row + 1)\n        dfs(root, 0, 0)\n        res = []\n        for col in sorted(mp.keys()):\n            mp[col].sort()\n            res.append([v for _, v in mp[col]])\n        return res' },
+    ],
+  },
+
+  {
+    title: 'Distribute Coins in Binary Tree',
+    problemNumber: 979,
     difficulty: 'hard',
     tags: 'tree',
     harnessType: 'tree-int',
-    methodName: 'maxPathSum',
+    methodName: 'distributeCoins',
+    description: 'You are given the `root` of a binary tree with `n` nodes where each `node` in the tree has `node.val` coins. There are `n` coins in total throughout the whole tree.\n\nIn one move, we may choose two adjacent nodes and move one coin from one node to another. A move may be from parent to child, or from child to parent.\n\nReturn the minimum number of moves required to make every node have exactly one coin.',
     visibleTestCases: [
-      { input: '1 2 3', output: '6', explanation: 'Path 2→1→3, sum 6.' },
-      { input: '-10 9 20 null null 15 7', output: '42', explanation: 'Path 15→20→7, sum 42.' },
+      { input: '3 0 0', output: '2', explanation: 'Root has 3 coins, children need 1 each. 2 moves.' },
+      { input: '0 3 0', output: '3', explanation: '3 moves required.' },
     ],
     hiddenTestCases: [
-      { input: '-3', output: '-3' },
-      { input: '2 -1', output: '2' },
+      { input: '1', output: '0' },
+      { input: '0 2', output: '1' },
+      { input: '1 0 2', output: '2' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int maxPathSum(TreeNode* root) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public int maxPathSum(TreeNode root) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def maxPathSum(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int distributeCoins(TreeNode* root) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int distributeCoins(TreeNode root) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def distributeCoins(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int maxPathSum(TreeNode* root) {\n        int best = INT_MIN;\n        gain(root, best);\n        return best;\n    }\nprivate:\n    int gain(TreeNode* node, int& best) {\n        if (!node) return 0;\n        int l = max(gain(node->left, best), 0);\n        int r = max(gain(node->right, best), 0);\n        best = max(best, node->val + l + r);\n        return node->val + max(l, r);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    private int best = Integer.MIN_VALUE;\n    public int maxPathSum(TreeNode root) {\n        gain(root);\n        return best;\n    }\n    private int gain(TreeNode node) {\n        if (node == null) return 0;\n        int l = Math.max(gain(node.left), 0);\n        int r = Math.max(gain(node.right), 0);\n        best = Math.max(best, node.val + l + r);\n        return node.val + Math.max(l, r);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def maxPathSum(self, root: TreeNode) -> int:\n        self.best = float(\'-inf\')\n        def gain(node):\n            if not node:\n                return 0\n            l = max(gain(node.left), 0)\n            r = max(gain(node.right), 0)\n            self.best = max(self.best, node.val + l + r)\n            return node.val + max(l, r)\n        gain(root)\n        return self.best' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int distributeCoins(TreeNode* root) {\n        int moves = 0;\n        dfs(root, moves);\n        return moves;\n    }\nprivate:\n    int dfs(TreeNode* n, int& moves) {\n        if (!n) return 0;\n        int l = dfs(n->left, moves);\n        int r = dfs(n->right, moves);\n        moves += abs(l) + abs(r);\n        return n->val + l + r - 1;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    private int moves = 0;\n    public int distributeCoins(TreeNode root) {\n        dfs(root);\n        return moves;\n    }\n    private int dfs(TreeNode n) {\n        if (n == null) return 0;\n        int l = dfs(n.left);\n        int r = dfs(n.right);\n        moves += Math.abs(l) + Math.abs(r);\n        return n.val + l + r - 1;\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def distributeCoins(self, root: TreeNode) -> int:\n        self.moves = 0\n        def dfs(n):\n            if not n:\n                return 0\n            l = dfs(n.left)\n            r = dfs(n.right)\n            self.moves += abs(l) + abs(r)\n            return n.val + l + r - 1\n        dfs(root)\n        return self.moves' },
     ],
   },
+
   {
-    title: 'Subtree of Another Tree',
-    problemNumber: 572,
-    description: 'Given the roots of two binary trees `root` and `subRoot`, return `true` if there is a subtree of `root` with the same structure and node values of `subRoot` and `false` otherwise.\n\nA subtree of a binary tree `tree` is a tree that consists of a node in `tree` and all of this node\'s descendants. The tree `tree` could also be considered a subtree of itself.\n\n**Input format:** Two lines of level-order arrays.',
-    difficulty: 'easy',
+    title: 'Maximum Sum BST in Binary Tree',
+    problemNumber: 1373,
+    difficulty: 'hard',
     tags: 'tree',
-    harnessType: 'two-trees-bool',
-    methodName: 'isSubtree',
+    harnessType: 'tree-int',
+    methodName: 'maxSumBST',
+    description: 'Given a binary tree `root`, return the maximum sum of all keys of any subtree which is also a Binary Search Tree (BST).\n\nIf no BST exists, return `0`.\n\nA BST is defined as:\n- The left subtree of a node contains only nodes with keys less than the node\'s key.\n- The right subtree of a node contains only nodes with keys greater than the node\'s key.\n- Both the left and right subtrees must also be binary search trees.',
     visibleTestCases: [
-      { input: '3 4 5 1 2\n4 1 2', output: 'true', explanation: 'Root\'s left subtree (4,1,2) matches subRoot.' },
-      { input: '3 4 5 1 2 null null null null 0\n4 1 2', output: 'false', explanation: 'Node 2 in root\'s tree has extra child 0.' },
+      { input: '1 4 3 2 4 2 5 null null null null null null 4 6', output: '20', explanation: 'Subtree rooted at 3 is a BST with sum 3+2+5+4+6 = 20.' },
+      { input: '4 3 null 1 2', output: '2', explanation: 'Node 2 alone is a BST with sum 2.' },
     ],
     hiddenTestCases: [
-      { input: '1\n1', output: 'true' },
-      { input: '1 2\n1', output: 'true' },
+      { input: '-4 -2 -5', output: '0' },
+      { input: '2 1 3', output: '6' },
     ],
     startCode: [
-      { language: 'C++', initialCode: 'class Solution {\npublic:\n    bool isSubtree(TreeNode* root, TreeNode* subRoot) {\n        // Write your code here\n    }\n};' },
-      { language: 'Java', initialCode: 'class Solution {\n    public boolean isSubtree(TreeNode root, TreeNode subRoot) {\n        // Write your code here\n    }\n}' },
-      { language: 'Python', initialCode: 'class Solution:\n    def isSubtree(self, root: TreeNode, subRoot: TreeNode) -> bool:\n        # Write your code here\n        pass' },
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    int maxSumBST(TreeNode* root) {\n        // Write your code here\n        return 0;\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int maxSumBST(TreeNode root) {\n        // Write your code here\n        return 0;\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def maxSumBST(self, root: TreeNode) -> int:\n        # Write your code here\n        pass' },
     ],
     referenceSolution: [
-      { language: 'C++', completeCode: 'class Solution {\npublic:\n    bool isSubtree(TreeNode* root, TreeNode* subRoot) {\n        if (!root) return false;\n        if (same(root, subRoot)) return true;\n        return isSubtree(root->left, subRoot) || isSubtree(root->right, subRoot);\n    }\nprivate:\n    bool same(TreeNode* a, TreeNode* b) {\n        if (!a && !b) return true;\n        if (!a || !b) return false;\n        if (a->val != b->val) return false;\n        return same(a->left, b->left) && same(a->right, b->right);\n    }\n};' },
-      { language: 'Java', completeCode: 'class Solution {\n    public boolean isSubtree(TreeNode root, TreeNode subRoot) {\n        if (root == null) return false;\n        if (same(root, subRoot)) return true;\n        return isSubtree(root.left, subRoot) || isSubtree(root.right, subRoot);\n    }\n    private boolean same(TreeNode a, TreeNode b) {\n        if (a == null && b == null) return true;\n        if (a == null || b == null) return false;\n        if (a.val != b.val) return false;\n        return same(a.left, b.left) && same(a.right, b.right);\n    }\n}' },
-      { language: 'Python', completeCode: 'class Solution:\n    def isSubtree(self, root: TreeNode, subRoot: TreeNode) -> bool:\n        if not root:\n            return False\n        def same(a, b):\n            if not a and not b:\n                return True\n            if not a or not b:\n                return False\n            if a.val != b.val:\n                return False\n            return same(a.left, b.left) and same(a.right, b.right)\n        if same(root, subRoot):\n            return True\n        return self.isSubtree(root.left, subRoot) or self.isSubtree(root.right, subRoot)' },
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    int maxSumBST(TreeNode* root) {\n        int best = 0;\n        dfs(root, best);\n        return best;\n    }\nprivate:\n    array<int, 4> dfs(TreeNode* n, int& best) {\n        if (!n) return {1, INT_MAX, INT_MIN, 0};\n        auto l = dfs(n->left, best);\n        auto r = dfs(n->right, best);\n        if (l[0] && r[0] && l[2] < n->val && n->val < r[1]) {\n            int s = l[3] + n->val + r[3];\n            best = max(best, s);\n            return {1, min(l[1], n->val), max(r[2], n->val), s};\n        }\n        return {0, 0, 0, 0};\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    private int best = 0;\n    public int maxSumBST(TreeNode root) {\n        dfs(root);\n        return best;\n    }\n    private int[] dfs(TreeNode n) {\n        if (n == null) return new int[]{1, Integer.MAX_VALUE, Integer.MIN_VALUE, 0};\n        int[] l = dfs(n.left);\n        int[] r = dfs(n.right);\n        if (l[0] == 1 && r[0] == 1 && l[2] < n.val && n.val < r[1]) {\n            int s = l[3] + n.val + r[3];\n            best = Math.max(best, s);\n            return new int[]{1, Math.min(l[1], n.val), Math.max(r[2], n.val), s};\n        }\n        return new int[]{0, 0, 0, 0};\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def maxSumBST(self, root: TreeNode) -> int:\n        self.best = 0\n        def dfs(n):\n            if not n:\n                return (True, float(\'inf\'), float(\'-inf\'), 0)\n            l = dfs(n.left)\n            r = dfs(n.right)\n            if l[0] and r[0] and l[2] < n.val < r[1]:\n                s = l[3] + n.val + r[3]\n                self.best = max(self.best, s)\n                return (True, min(l[1], n.val), max(r[2], n.val), s)\n            return (False, 0, 0, 0)\n        dfs(root)\n        return self.best' },
+    ],
+  },
+
+  {
+    title: 'Sum of Distances in Tree',
+    problemNumber: 834,
+    difficulty: 'hard',
+    tags: 'graph',
+    harnessType: 'n-edges-int-arr',
+    methodName: 'sumOfDistancesInTree',
+    description: 'There is an undirected connected tree with `n` nodes labeled from `0` to `n - 1` and `n - 1` edges.\n\nYou are given the integer `n` and the array `edges` where `edges[i] = [a_i, b_i]` indicates that there is an edge between nodes `a_i` and `b_i` in the tree.\n\nReturn an array `answer` of length `n` where `answer[i]` is the sum of the distances between the i-th node in the tree and all other nodes.\n\n**Input format:** Line 1 = n, Line 2 = flat edge pairs (a b c d = edges [a,b], [c,d]).',
+    visibleTestCases: [
+      { input: '6\n0 1 0 2 2 3 2 4 2 5', output: '8 12 6 10 10 10', explanation: 'Answer is [8,12,6,10,10,10].' },
+      { input: '2\n1 0', output: '1 1', explanation: 'Two nodes at distance 1 from each other.' },
+    ],
+    hiddenTestCases: [
+      { input: '3\n0 1 1 2', output: '3 2 3' },
+      { input: '4\n0 1 0 2 0 3', output: '3 5 5 5' },
+    ],
+    startCode: [
+      { language: 'C++', initialCode: 'class Solution {\npublic:\n    vector<int> sumOfDistancesInTree(int n, vector<vector<int>>& edges) {\n        // Write your code here\n        return {};\n    }\n};' },
+      { language: 'Java', initialCode: 'class Solution {\n    public int[] sumOfDistancesInTree(int n, int[][] edges) {\n        // Write your code here\n        return new int[]{};\n    }\n}' },
+      { language: 'Python', initialCode: 'class Solution:\n    def sumOfDistancesInTree(self, n: int, edges: List[List[int]]) -> List[int]:\n        # Write your code here\n        pass' },
+    ],
+    referenceSolution: [
+      { language: 'C++', completeCode: 'class Solution {\npublic:\n    vector<int> sumOfDistancesInTree(int n, vector<vector<int>>& edges) {\n        vector<vector<int>> adj(n);\n        for (auto& e : edges) { adj[e[0]].push_back(e[1]); adj[e[1]].push_back(e[0]); }\n        vector<int> count(n, 1), res(n, 0);\n        function<void(int, int)> dfs1 = [&](int node, int parent) {\n            for (int nx : adj[node]) {\n                if (nx == parent) continue;\n                dfs1(nx, node);\n                count[node] += count[nx];\n                res[node] += res[nx] + count[nx];\n            }\n        };\n        function<void(int, int)> dfs2 = [&](int node, int parent) {\n            for (int nx : adj[node]) {\n                if (nx == parent) continue;\n                res[nx] = res[node] + n - 2 * count[nx];\n                dfs2(nx, node);\n            }\n        };\n        dfs1(0, -1);\n        dfs2(0, -1);\n        return res;\n    }\n};' },
+      { language: 'Java', completeCode: 'class Solution {\n    public int[] sumOfDistancesInTree(int n, int[][] edges) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());\n        for (int[] e : edges) { adj.get(e[0]).add(e[1]); adj.get(e[1]).add(e[0]); }\n        int[] count = new int[n], res = new int[n];\n        Arrays.fill(count, 1);\n        dfs1(0, -1, adj, count, res);\n        dfs2(0, -1, n, adj, count, res);\n        return res;\n    }\n    private void dfs1(int node, int parent, List<List<Integer>> adj, int[] count, int[] res) {\n        for (int nx : adj.get(node)) {\n            if (nx == parent) continue;\n            dfs1(nx, node, adj, count, res);\n            count[node] += count[nx];\n            res[node] += res[nx] + count[nx];\n        }\n    }\n    private void dfs2(int node, int parent, int n, List<List<Integer>> adj, int[] count, int[] res) {\n        for (int nx : adj.get(node)) {\n            if (nx == parent) continue;\n            res[nx] = res[node] + n - 2 * count[nx];\n            dfs2(nx, node, n, adj, count, res);\n        }\n    }\n}' },
+      { language: 'Python', completeCode: 'class Solution:\n    def sumOfDistancesInTree(self, n: int, edges: List[List[int]]) -> List[int]:\n        adj = [[] for _ in range(n)]\n        for a, b in edges:\n            adj[a].append(b)\n            adj[b].append(a)\n        count = [1] * n\n        res = [0] * n\n        def dfs1(node, parent):\n            for nx in adj[node]:\n                if nx == parent:\n                    continue\n                dfs1(nx, node)\n                count[node] += count[nx]\n                res[node] += res[nx] + count[nx]\n        def dfs2(node, parent):\n            for nx in adj[node]:\n                if nx == parent:\n                    continue\n                res[nx] = res[node] + n - 2 * count[nx]\n                dfs2(nx, node)\n        dfs1(0, -1)\n        dfs2(0, -1)\n        return res' },
     ],
   },
 ];
 
 // ─────────────────────────────────────────────────────────────
-// SEED
+// MAIN
 // ─────────────────────────────────────────────────────────────
 
 async function main() {
@@ -910,7 +728,6 @@ async function main() {
     const client = axios.create({ headers: { Cookie: cookies } });
     console.log('✅ Logged in\n');
 
-    // Pre-build harnesses for all problems
     const problemsWithHarnesses = problemsData.map((p) => ({
       title: p.title,
       problemNumber: p.problemNumber,
@@ -928,7 +745,6 @@ async function main() {
       ],
     }));
 
-    // Load existing problems
     console.log('📋 Loading existing problems...');
     const { data: allProblems } = await client.get(`${BACKEND_URL}/problem/getAllProblem`);
     const existingByTitle = new Map();
@@ -945,18 +761,14 @@ async function main() {
         try {
           const adminRes = await client.get(`${BACKEND_URL}/problem/admin/${existing._id}`);
           const existingFull = adminRes.data;
-
           if (
-            Array.isArray(existingFull.testHarness) &&
-            existingFull.testHarness.length >= 3 &&
-            Array.isArray(existingFull.visibleTestCases) &&
-            existingFull.visibleTestCases.length > 0
+            Array.isArray(existingFull.testHarness) && existingFull.testHarness.length >= 3 &&
+            Array.isArray(existingFull.visibleTestCases) && existingFull.visibleTestCases.length > 0
           ) {
             console.log(`⏭️  Skipping "${p.title}" (already runnable)`);
             skipped++;
             continue;
           }
-
           await client.put(`${BACKEND_URL}/problem/update/${existing._id}`, {
             ...existingFull,
             problemNumber: p.problemNumber,
@@ -968,7 +780,7 @@ async function main() {
             referenceSolution: p.referenceSolution,
             testHarness: p.testHarness,
           });
-          console.log(`✅ Updated "${p.title}" (#${p.problemNumber}) — made runnable`);
+          console.log(`✅ Updated "${p.title}" (#${p.problemNumber})`);
           updated++;
         } catch (err) {
           const msg = err.response?.data?.error || err.message;
@@ -993,7 +805,7 @@ async function main() {
     }
 
     console.log('─'.repeat(60));
-    console.log(`🎉 Tree problems batch complete`);
+    console.log(`🎉 Tree batch 3 complete`);
     console.log(`   ✅ Created:    ${created}`);
     console.log(`   🔄 Updated:    ${updated}`);
     console.log(`   ⏭️  Skipped:   ${skipped}`);

@@ -22,8 +22,11 @@ const buildFinalCode = (problem, language, userCode) => {
   );
 
   if (harness?.harnessCode && harness.harnessCode.includes('{{USER_CODE}}')) {
-    return harness.harnessCode.replace(/\{\{USER_CODE\}\}/g, userCode);
-  }
+  // Use a function as the replacement so `$` sequences in userCode
+  // (like $&, $', $1) are treated literally. String replacements in JS
+  // interpret those, which corrupts any code containing a `$` character.
+  return harness.harnessCode.replace(/\{\{USER_CODE\}\}/g, () => userCode);
+}
   return userCode;
 };
 

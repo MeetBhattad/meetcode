@@ -52,30 +52,39 @@ const submitCode = async (req, res) => {
 
     if (!Array.isArray(testResult)) return res.status(502).json({ error: "Judge0 unavailable" });
 
-    let testCasesPassed = 0;
+        let testCasesPassed = 0;
     let runtime = 0;
     let memory = 0;
     let status = "accepted";
     let errorMessage = null;
+    let errorType = null;
 
-    for (const test of testResult) {
-      if (test.status_id === 3) {
-        testCasesPassed++;
-        runtime += parseFloat(test.time) || 0;
-        memory = Math.max(memory, test.memory || 0);
-      } else if (test.status_id === 4) {
-        status = "wrong";
-        errorMessage = `Wrong Answer\nExpected: ${test.expected_output}\nGot: ${test.stdout || "(empty)"}`;
-      } else if (test.status_id === 5) {
-        status = "error";
-        errorMessage = "Time Limit Exceeded";
-      } else if (test.status_id === 6) {
-        status = "error";
-        errorMessage = test.compile_output || "Compilation error";
-      } else {
-        status = "error";
-        errorMessage = test.stderr || `Runtime error (status ${test.status_id})`;
-      }
+    for(const test of testResult){
+        if(test.status_id === 3){
+           testCasesPassed++;
+           runtime += parseFloat(test.time) || 0;
+           memory = Math.max(memory, test.memory || 0);
+        } else if(test.status_id === 4){
+          status = "wrong";
+          errorType = "wrong";
+          errorMessage = `Wrong Answer\nExpected: ${test.expected_output}\nGot: ${test.stdout || "(empty)"}`;
+        } else if(test.status_id === 5){
+          status = "error";
+          errorType = "runtime";
+          errorMessage = "Time Limit Exceeded";
+        } else if(test.status_id === 6){
+          status = "error";
+          errorType = "compile";
+          errorMessage = test.compile_output || "Compilation error";
+        } else if(test.status_id >= 7 && test.status_id <= 12){
+          status = "error";
+          errorType = "runtime";
+          errorMessage = test.stderr || `Runtime error (status ${test.status_id})`;
+        } else {
+          status = "error";
+          errorType = "runtime";
+          errorMessage = test.stderr || `Judge0 error (status ${test.status_id})`;
+        }
     }
 
     submittedResult.status = status;
@@ -93,13 +102,14 @@ const submitCode = async (req, res) => {
       }
     }
 
-    res.status(201).json({
+        res.status(201).json({
       accepted: status === "accepted",
       totalTestCases: submittedResult.testCasesTotal,
       passedTestCases: testCasesPassed,
       runtime,
       memory,
       errorMessage,
+      errorType,
     });
   } catch (err) {
     console.error("submitCode error:", err);
@@ -145,17 +155,25 @@ const runCode = async (req, res) => {
 
     if (!Array.isArray(testResult)) return res.status(502).json({ error: "Judge0 unavailable" });
 
-    let testCasesPassed = 0;
+        let testCasesPassed = 0;
     let runtime = 0;
     let memory = 0;
     let errorMessage = null;
+    let errorType = null;
 
-    for (const test of testResult) {
-      if (test.status_id === 3) {
+    for(const test of testResult){
+      if(test.status_id === 3){
         testCasesPassed++;
         runtime += parseFloat(test.time) || 0;
         memory = Math.max(memory, test.memory || 0);
+      } else if(test.status_id === 4){
+        errorType = "wrong";
+        errorMessage = test.stderr || null;
+      } else if(test.status_id === 6){
+        errorType = "compile";
+        errorMessage = test.compile_output || "Compilation error";
       } else {
+        errorType = "runtime";
         errorMessage = test.stderr || test.compile_output || null;
       }
     }
@@ -167,6 +185,8 @@ const runCode = async (req, res) => {
       testCases: testResult,
       runtime,
       memory,
+      errorMessage,
+      errorType,
     });
   } catch (err) {
     console.error("runCode error:", err);
