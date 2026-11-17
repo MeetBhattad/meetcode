@@ -9,7 +9,7 @@ const getDashboardStats = async (req, res) => {
 
     const [user, allProblems, userSubs, mockSessions] = await Promise.all([
       User.findById(userId),
-      Problem.find({}).select('_id title difficulty tags'),
+      Problem.find({}).select('_id title difficulty tags testHarness visibleTestCases'),
       Submission.find({ userId })
         .select('problemId status createdAt language')
         .sort({ createdAt: -1 }),
@@ -23,6 +23,12 @@ const getDashboardStats = async (req, res) => {
     const problemMap = {};
     allProblems.forEach(p => { problemMap[p._id.toString()] = p; });
 
+    const isRunnable = (p) =>
+      Array.isArray(p.testHarness) && p.testHarness.length >= 3 &&
+      Array.isArray(p.visibleTestCases) && p.visibleTestCases.length > 0;
+
+    const totalRunnable = allProblems.filter(isRunnable).length;
+
     const solvedSet = new Set((user.problemSolved || []).map(id => id.toString()));
     const totalProblems = allProblems.length;
 
@@ -33,6 +39,7 @@ const getDashboardStats = async (req, res) => {
     };
     allProblems.forEach(p => {
       if (!difficulty[p.difficulty]) return;
+      if (!isRunnable(p)) return; 
       difficulty[p.difficulty].total++;
       if (solvedSet.has(p._id.toString())) difficulty[p.difficulty].solved++;
     });
@@ -174,6 +181,7 @@ const getDashboardStats = async (req, res) => {
     res.status(200).json({
       overview: {
         totalSolved: solvedSet.size,
+        totalRunnable,
         totalAttempted: attemptedProblems.size,
         totalProblems,
         streak,

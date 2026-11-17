@@ -1,6 +1,8 @@
-const express = require('express')
+const path = require('path');
+const express = require('express');
 const contestRouter = require("./routes/contest");
 const bookmarkRouter = require("./routes/bookmark");
+const contestHistoryRouter = require("./routes/contestHistory");
 const noteRouter = require("./routes/note");
 const app = express();
 require('dotenv').config();
@@ -17,6 +19,9 @@ const dashboardRouter = require("./routes/dashboard");
 const learningPathRouter = require("./routes/learningPath");
 const companyRouter = require("./routes/company");
 const reviewRouter = require("./routes/review");
+const leaderboardRouter = require("./routes/leaderboard");
+
+
 const cors = require('cors')
 
 
@@ -41,8 +46,8 @@ app.use('/review', reviewRouter);
 app.use('/contest', contestRouter);
 app.use('/bookmark', bookmarkRouter);
 app.use('/note', noteRouter);
-
-
+app.use('/contest', contestHistoryRouter);
+app.use('/leaderboard', leaderboardRouter);
 
 const InitalizeConnection = async ()=>{
     try{
@@ -71,6 +76,14 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message });
 });
 app.use((req, res) => res.status(404).json({ message: 'Not found' }));
+
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// For any route that doesn't match an API endpoint, send the React index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 
 InitalizeConnection();
