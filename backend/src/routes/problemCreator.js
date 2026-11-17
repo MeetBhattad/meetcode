@@ -14,6 +14,7 @@ const {
   getProblemForAdmin
 } = require("../controllers/userProblem");
 const userMiddleware = require("../middleware/userMiddleware");
+const { getDailyProblem } = require("../controllers/dailyProblem");
 
 // Create
 problemRouter.post("/create", adminMiddleware, createProblem);
@@ -27,5 +28,6 @@ problemRouter.get("/problemSolvedByUser", userMiddleware, solvedAllProblembyUser
 problemRouter.get("/submittedProblem/:pid", userMiddleware, submittedProblem);
 problemRouter.get("/solution/:id", userMiddleware, getSolution);
 problemRouter.get("/admin/:id", adminMiddleware, getProblemForAdmin);
+problemRouter.get("/daily", userMiddleware, getDailyProblem);
 
 module.exports = problemRouter;

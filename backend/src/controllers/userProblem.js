@@ -178,7 +178,9 @@ const getSolution = async (req, res) => {
 
 const getAllProblem = async (req, res) => {
   try {
-    const problems = await Problem.aggregate([
+    const { runnableOnly } = req.query;
+
+    const pipeline = [
       {
         $project: {
           _id: 1,
@@ -195,7 +197,20 @@ const getAllProblem = async (req, res) => {
           },
         },
       },
-    ]);
+    ];
+
+    if (runnableOnly === 'true') {
+      pipeline.push({ $match: { isRunnable: true } });
+    }
+
+    // Numbered first (1, 2, 3...), unnumbered pushed to end, ties broken by title
+    pipeline.push(
+      { $addFields: { _sortKey: { $ifNull: ["$problemNumber", 999999] } } },
+      { $sort: { _sortKey: 1, title: 1 } },
+      { $project: { _sortKey: 0 } }
+    );
+
+    const problems = await Problem.aggregate(pipeline);
     res.status(200).json(problems);
   } catch (err) {
     console.error("getAllProblem error:", err);

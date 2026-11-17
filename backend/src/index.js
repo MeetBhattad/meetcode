@@ -1,5 +1,7 @@
 const express = require('express')
 const contestRouter = require("./routes/contest");
+const bookmarkRouter = require("./routes/bookmark");
+const noteRouter = require("./routes/note");
 const app = express();
 require('dotenv').config();
 const main =  require('./config/db')
@@ -37,6 +39,8 @@ app.use('/paths', learningPathRouter);
 app.use('/company', companyRouter);
 app.use('/review', reviewRouter);
 app.use('/contest', contestRouter);
+app.use('/bookmark', bookmarkRouter);
+app.use('/note', noteRouter);
 
 
 

@@ -38,6 +38,10 @@ const userSchema = new Schema({
             
         }]
     },
+    bookmarkedProblems:[{
+    type:Schema.Types.ObjectId,
+    ref:'problem'
+  }],
     password:{
         type:String,
         required: true
