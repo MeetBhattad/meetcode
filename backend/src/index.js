@@ -13,6 +13,7 @@ const redisClient = require('./config/redis');
 const problemRouter = require("./routes/problemCreator");
 const submitRouter = require("./routes/submit")
 const aiRouter = require("./routes/aiChatting")
+const aiReviewRouter = require("./routes/aiCodeReview");
 const videoRouter = require("./routes/videoCreator");
 const mockRouter = require("./routes/mockInterview");
 const dashboardRouter = require("./routes/dashboard");
@@ -37,6 +38,7 @@ app.use('/user',authRouter);
 app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 app.use('/ai',aiRouter);
+app.use('/ai-review', aiReviewRouter);
 app.use("/video",videoRouter);
 app.use('/mock', mockRouter);
 app.use('/dashboard', dashboardRouter);

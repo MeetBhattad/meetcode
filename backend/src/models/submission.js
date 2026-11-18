@@ -45,7 +45,9 @@ const submissionSchema = new Schema({
   testCasesTotal: {  
     type: Number,
     default: 0
-  }
+  },
+  aiReview: { type: Schema.Types.Mixed, default: null },
+  aiReviewedAt: { type: Date, default: null },
 }, { 
   timestamps: true
 });

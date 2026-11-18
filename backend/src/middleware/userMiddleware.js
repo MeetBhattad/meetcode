@@ -24,8 +24,6 @@ const userMiddleware = async (req,res,next)=>{
             throw new Error("User Doesn't Exist");
         }
 
-        // Redis ke blockList mein persent toh nahi hai
-
         const IsBlocked = await redisClient.exists(`token:${token}`);
 
         if(IsBlocked)
