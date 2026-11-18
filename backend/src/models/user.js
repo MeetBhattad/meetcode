@@ -21,6 +21,11 @@ const userSchema = new Schema({
         lowercase:true,
         immutable: true,
     },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true // Allows multiple null/undefined values
+    },
     age:{
         type:Number,
         min:6,

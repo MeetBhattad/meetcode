@@ -1,10 +1,11 @@
+const { OAuth2Client } = require('google-auth-library');
+
 const redisClient = require("../config/redis");
 const User =  require("../models/user")
 const validate = require('../utils/validator');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const Submission = require("../models/submission")
-
 
 const register = async (req,res)=>{
     
@@ -146,4 +147,58 @@ const deleteProfile = async(req,res)=>{
 }
 
 
-module.exports = {register, login,logout,adminRegister,deleteProfile};
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, given_name, family_name, sub: googleId } = payload;
+
+    let user = await User.findOne({ $or: [{ emailId: email }, { googleId }] });
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        firstName: given_name,
+        lastName: family_name,
+        emailId: email,
+        googleId,
+        role: 'user',
+      });
+    }
+
+    const token = jwt.sign(
+      { _id: user._id, emailId: user.emailId, role: user.role },
+      process.env.JWT_KEY,
+      { expiresIn: '1h' }
+    );
+
+    res.cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true });
+
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        emailId: user.emailId,
+        role: user.role,
+      },
+      message: 'Google Login Successful',
+    });
+  } catch (err) {
+    console.error('Google login error:', err);
+    res.status(401).json({ error: 'Google authentication failed' });
+  }
+};
+
+
+module.exports = {register, login,logout,adminRegister,deleteProfile, googleLogin};

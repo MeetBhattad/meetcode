@@ -71,20 +71,19 @@ const InitalizeConnection = async ()=>{
 }
 
 
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(err.status || 500).json({ message: err.message });
 });
-app.use((req, res) => res.status(404).json({ message: 'Not found' }));
+app.use((_req, res) => res.status(404).json({ message: 'Not found' }));
 
 // Serve static files from the React build folder
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // For any route that doesn't match an API endpoint, send the React index.html
-app.get('*', (req, res) => {
+app.get('/*splat', (_req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 
 InitalizeConnection();
-
