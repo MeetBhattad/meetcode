@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { registerUser } from '../authSlice';
+import { registerUser, googleLogin } from '../authSlice';
 import { ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const signupSchema = z.object({
   firstName: z.string().min(3, "Minimum 3 characters"),
@@ -96,7 +97,13 @@ function Signup() {
   }, []);
 
   const onSubmit = (data) => dispatch(registerUser(data));
+const handleGoogleSuccess = (credentialResponse) => {
+  dispatch(googleLogin(credentialResponse.credential));
+};
 
+const handleGoogleError = () => {
+  console.error('Google Signup Failed');
+};
   return (
     <>
       <style>{styles}</style>
@@ -276,10 +283,32 @@ function Signup() {
                 )}
               </button>
             </div>
-          </form>
+                    </form>
+
+          {/* Divider */}
+          <div className="fade-in relative my-6" style={{ animationDelay: '400ms' }}>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/[0.07]"></div>
+            </div>
+            <div className="relative flex justify-center text-[11px]">
+              <span className="bg-[#07070a] px-3 text-white/30 tracking-wider">OR</span>
+            </div>
+          </div>
+
+          {/* Google Signup */}
+          <div className="fade-in flex justify-center" style={{ animationDelay: '480ms' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="filled_black"
+              shape="pill"
+              width="312"
+              text="signup_with"
+            />
+          </div>
 
           {/* Footer */}
-          <p className="fade-in mt-12 text-center text-[13px] text-white/30" style={{ animationDelay: '600ms' }}>
+          <p className="fade-in mt-10 text-center text-[13px] text-white/30" style={{ animationDelay: '600ms' }}>
             Already have an account?{' '}
             <NavLink to="/login" className="font-medium text-white/70 hover:text-white transition-colors">
               Sign in

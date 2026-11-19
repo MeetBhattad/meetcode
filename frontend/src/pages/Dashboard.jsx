@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import CircularProgress from '../components/CircularProgress';
 import { NavLink } from 'react-router';
 import axiosClient from '../utils/axiosClient';
+import { DashboardSkeleton } from '../components/Skeletons';
 import {
   ArrowLeft, Flame, Trophy, Target, Mic, TrendingUp,
   AlertTriangle, CheckCircle2, XCircle, Clock, Loader2, ArrowRight, Brain, Calendar
@@ -159,18 +161,21 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [paths, setPaths] = useState([]);
   const [dueReviews, setDueReviews] = useState(0);
+  const [contests, setContests] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [statsRes, pathsRes, reviewsRes] = await Promise.all([
-          axiosClient.get('/dashboard/stats'),
-          axiosClient.get('/paths'),
-          axiosClient.get('/review/due').catch(() => ({ data: [] })),
-        ]);
-        setStats(statsRes.data);
-        setPaths(pathsRes.data);
-        setDueReviews(reviewsRes.data.length || 0);
+        const [statsRes, pathsRes, reviewsRes, contestsRes] = await Promise.all([
+        axiosClient.get('/dashboard/stats'),
+        axiosClient.get('/paths'),
+        axiosClient.get('/review/due').catch(() => ({ data: [] })),
+        axiosClient.get('/contest/history').catch(() => ({ data: [] })),
+      ]);
+      setStats(statsRes.data);
+      setPaths(pathsRes.data);
+      setDueReviews(reviewsRes.data.length || 0);
+      setContests(contestsRes.data || []);
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to load dashboard');
       } finally {
@@ -181,11 +186,7 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#07070a] flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-violet-500" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {
@@ -298,32 +299,52 @@ export default function Dashboard() {
         )}
 
         {/* Overview cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <StatCard
-            icon={<CheckCircle2 size={16} className="text-emerald-400" />}
-            label="Solved"
-            value={overview.totalSolved}
-            sub={`of ${overview.totalProblems}`}
-          />
-          <StatCard
-            icon={<Flame size={16} className="text-orange-400" />}
-            label="Streak"
-            value={overview.streak}
-            sub={overview.longestStreak > 0 ? `best: ${overview.longestStreak}` : 'days'}
-            accent={overview.streak > 0 ? 'text-orange-400' : ''}
-          />
-          <StatCard
-            icon={<TrendingUp size={16} className="text-violet-400" />}
-            label="This week"
-            value={overview.thisWeek}
-            sub="problems"
-          />
-          <StatCard
-            icon={<Mic size={16} className="text-cyan-400" />}
-            label="Interviews"
-            value={interviews.total}
-            sub={interviews.total > 0 ? `${interviews.avgScore}/10 avg` : 'none yet'}
-          />
+                {/* Hero: circular progress + difficulty breakdown + key stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Left: ring + difficulty */}
+          <div className="md:col-span-2 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-6">
+            <div className="flex items-center gap-8 flex-wrap">
+              <CircularProgress
+                solved={overview.totalSolved}
+                total={overview.totalRunnable || overview.totalProblems}
+                size={180}
+              />
+              <div className="flex-1 min-w-[200px] space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Trophy size={14} className="text-violet-400" />
+                  <span className="text-[12px] font-semibold text-white/60 uppercase tracking-wider">
+                    Difficulty Breakdown
+                  </span>
+                </div>
+                <DiffBar label="Easy" solved={difficulty.easy.solved} total={difficulty.easy.total} color="emerald" />
+                <DiffBar label="Medium" solved={difficulty.medium.solved} total={difficulty.medium.total} color="amber" />
+                <DiffBar label="Hard" solved={difficulty.hard.solved} total={difficulty.hard.total} color="rose" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right: 3 stacked stat cards */}
+          <div className="space-y-3">
+            <StatCard
+              icon={<Flame size={16} className="text-orange-400" />}
+              label="Streak"
+              value={overview.streak}
+              sub={overview.longestStreak > 0 ? `best: ${overview.longestStreak}` : 'days'}
+              accent={overview.streak > 0 ? 'text-orange-400' : ''}
+            />
+            <StatCard
+              icon={<TrendingUp size={16} className="text-violet-400" />}
+              label="This week"
+              value={overview.thisWeek}
+              sub="problems"
+            />
+            <StatCard
+              icon={<Mic size={16} className="text-cyan-400" />}
+              label="Interviews"
+              value={interviews.total}
+              sub={interviews.total > 0 ? `${interviews.avgScore}/10 avg` : 'none yet'}
+            />
+          </div>
         </div>
 
         {/* Continue Learning */}
@@ -484,8 +505,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Bottom row: Recent + Difficulty */}
-        <div className="grid md:grid-cols-2 gap-4">
+                {/* Bottom row: Recent + Weekly + Contests */}
+        <div className="grid md:grid-cols-3 gap-4">
           {/* Recent Submissions */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -496,7 +517,7 @@ export default function Dashboard() {
               <p className="text-[13px] text-white/40">No submissions yet.</p>
             ) : (
               <div className="space-y-0.5">
-                {recent.slice(0, 8).map((r, i) => (
+                {recent.slice(0, 6).map((r, i) => (
                   <div key={i} className="flex items-center gap-2 text-[12.5px] py-1.5 border-b border-white/[0.03] last:border-0">
                     {r.status === 'accepted' ? (
                       <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
@@ -520,43 +541,87 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Difficulty + Weekly combined */}
+          {/* Recent Contests */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy size={15} className="text-violet-400" />
-              <h2 className="text-[14px] font-semibold">Progress by Difficulty</h2>
-            </div>
-            <div className="space-y-3">
-              <DiffBar label="Easy" solved={difficulty.easy.solved} total={difficulty.easy.total} color="emerald" />
-              <DiffBar label="Medium" solved={difficulty.medium.solved} total={difficulty.medium.total} color="amber" />
-              <DiffBar label="Hard" solved={difficulty.hard.solved} total={difficulty.hard.total} color="rose" />
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-white/[0.06]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[12px] font-medium text-white/60">Last 7 Days</span>
-                <span className="text-[11px] text-white/30">
-                  {overview.thisWeek} solved
-                </span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Trophy size={15} className="text-amber-400" />
+                <h2 className="text-[14px] font-semibold">Recent Contests</h2>
               </div>
-              <div className="flex items-end justify-between gap-1.5 h-16">
-                {weekly.map((d, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full flex flex-col items-center justify-end h-full">
-                      <div
-                        className={`w-full rounded-t transition-all ${
-                          d.count > 0 ? 'bg-violet-500' : 'bg-white/[0.06]'
-                        }`}
-                        style={{ height: `${Math.max((d.count / maxWeekly) * 100, 4)}%` }}
-                        title={`${d.count} solved`}
-                      />
+              <NavLink to="/contest" className="text-[11px] text-violet-400 hover:text-violet-300">
+                New →
+              </NavLink>
+            </div>
+            {contests.length === 0 ? (
+              <div className="py-6 text-center">
+                <p className="text-[13px] text-white/40 mb-3">No contests yet.</p>
+                <NavLink
+                  to="/contest"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[12px] font-medium transition-colors"
+                >
+                  Start your first <Trophy size={12} />
+                </NavLink>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                                {contests.slice(0, 4).map(c => (
+                  <NavLink
+                    key={c._id}
+                    to={`/contest/history/${c._id}`}
+                    className="group flex items-center gap-3 py-2 border-b border-white/[0.03] last:border-0 rounded-md px-2 -mx-2 hover:bg-white/[0.03] transition-colors"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      c.solvedCount === c.problems.length
+                        ? 'bg-amber-500/15 border border-amber-500/20'
+                        : 'bg-white/[0.04] border border-white/[0.06]'
+                    }`}>
+                      <span className="text-[12px] font-bold text-white/70">{c.solvedCount}/4</span>
                     </div>
-                    <span className="text-[9.5px] text-white/35">{dayLabel(d.date)}</span>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12.5px] font-medium text-white/80 group-hover:text-violet-400 capitalize truncate transition-colors">
+                        {c.topic === 'random' ? 'Random Mix' : c.topic.replace(/([A-Z])/g, ' $1')}
+                      </p>
+                      <p className="text-[10.5px] text-white/30">{timeAgo(c.createdAt)}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] font-mono text-violet-400 font-bold">{c.score}</span>
+                      <span className="text-[9.5px] text-white/30">pts</span>
+                    </div>
+                  </NavLink>
                 ))}
               </div>
+            )}
+          </div>
+          
+          {/* Weekly activity */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={15} className="text-violet-400" />
+                <h2 className="text-[14px] font-semibold">Last 7 Days</h2>
+              </div>
+              <span className="text-[11px] text-white/30">
+                {overview.thisWeek} solved
+              </span>
+            </div>
+            <div className="flex items-end justify-between gap-2 h-32">
+              {weekly.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div className="w-full flex flex-col items-center justify-end h-full">
+                    <div
+                      className={`w-full rounded-t transition-all ${
+                        d.count > 0 ? 'bg-violet-500' : 'bg-white/[0.06]'
+                      }`}
+                      style={{ height: `${Math.max((d.count / maxWeekly) * 100, 4)}%` }}
+                      title={`${d.count} solved`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-white/40">{dayLabel(d.date)}</span>
+                </div>
+              ))}
             </div>
           </div>
+
         </div>
 
         {/* CTA */}
@@ -585,7 +650,7 @@ const StatCard = ({ icon, label, value, sub, accent = '' }) => (
   </div>
 );
 
-const DiffBar = ({ label, solved, total, color }) => {
+function DiffBar({ label, solved, total, color }) {
   const rate = total > 0 ? solved / total : 0;
   const colorMap = {
     emerald: { bar: 'bg-emerald-500', text: 'text-emerald-400' },
@@ -604,4 +669,4 @@ const DiffBar = ({ label, solved, total, color }) => {
       </div>
     </div>
   );
-};
+}

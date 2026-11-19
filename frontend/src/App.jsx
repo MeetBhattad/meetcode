@@ -20,6 +20,11 @@ import AdminUpload from "./components/AdminUpload"
 import AdminUpdateList from "./components/AdminUpdateList"; 
 import AdminEdit from "./components/AdminEdit"; 
 import ReviewDeck from "./pages/ReviewDeck";
+import NotFound from "./pages/NotFound";
+import Bookmarks from "./pages/Bookmarks";
+import Leaderboard from "./pages/Leaderboard";
+import ContestHistoryDetail from "./pages/ContestHistoryDetail";
+
 
 function App(){
   
@@ -56,8 +61,12 @@ function App(){
       <Route path="/admin/update" element={isAuthenticated && user?.role === 'admin' ? <AdminUpdateList /> : <Navigate to="/" />} />
       <Route path="/admin/edit/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminEdit /> : <Navigate to="/" />} />
       <Route path="/review" element={isAuthenticated ? <ReviewDeck /> : <Navigate to="/signup" />} />
+      <Route path="/contest/history/:id" element={isAuthenticated ? <ContestHistoryDetail /> : <Navigate to="/signup" />} />
       <Route path="/contest" element={isAuthenticated ? <ContestSetup /> : <Navigate to="/signup" />} />
       <Route path="/contest/arena" element={isAuthenticated ? <ContestArena /> : <Navigate to="/signup" />} />
+      <Route path="*" element={<NotFound />} />
+      <Route path="/bookmarks" element={isAuthenticated ? <Bookmarks /> : <Navigate to="/signup" />} />
+      <Route path="/leaderboard" element={isAuthenticated ? <Leaderboard /> : <Navigate to="/signup" />} />
       
     </Routes>
   </>

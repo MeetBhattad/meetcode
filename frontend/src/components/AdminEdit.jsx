@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react';
+import { useToast } from '../context/ToastContext';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -66,6 +67,7 @@ const codeAreaStyle = "w-full bg-[#0d1117] border border-white/[0.08] rounded-lg
 const AdminEdit = () => {
   const { problemId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -124,9 +126,10 @@ const AdminEdit = () => {
     setSaving(true);
     try {
       await axiosClient.put(`/problem/update/${problemId}`, data);
-      navigate('/admin/update'); // Go back to the list
+      toast.success('Problem updated');
+      navigate('/admin/update');
     } catch (error) {
-      alert(`Update Failed: ${error.response?.data?.error || error.message}`);
+      toast.error(`Update failed: ${error.response?.data?.error || error.message}`);
     } finally {
       setSaving(false);
     }

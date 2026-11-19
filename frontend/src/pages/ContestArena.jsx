@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router';
 import Editor from '@monaco-editor/react';
@@ -34,6 +34,7 @@ export default function ContestArena() {
   const [contest, setContest] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [mobileView, setMobileView] = useState('problem'); // 'problem' | 'code'
 
   const [problemDetails, setProblemDetails] = useState(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
@@ -125,6 +126,11 @@ export default function ContestArena() {
     localStorage.removeItem('activeContest');
     localStorage.removeItem('contestProgress');
     localStorage.setItem('contestResults', JSON.stringify(payload));
+
+    // Persist to backend for contest history
+    axiosClient.post('/contest/save', payload).catch(err => {
+      console.error('Failed to save contest history:', err);
+    });
 
     setFinalResults(payload);
     setShowResults(true);
@@ -372,6 +378,28 @@ export default function ContestArena() {
   return (
     <div className="h-screen flex flex-col bg-[#07070a] text-white">
       <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.08] bg-[#0d1117]">
+      <div className="md:hidden flex border-b border-white/[0.08] bg-[#0d1117] shrink-0">
+        <button
+          onClick={() => setMobileView('problem')}
+          className={`flex-1 py-2.5 text-[13px] font-medium transition-colors border-b-2 ${
+            mobileView === 'problem'
+              ? 'text-white border-violet-500'
+              : 'text-white/50 border-transparent'
+          }`}
+        >
+          Problem
+        </button>
+        <button
+          onClick={() => setMobileView('code')}
+          className={`flex-1 py-2.5 text-[13px] font-medium transition-colors border-b-2 ${
+            mobileView === 'code'
+              ? 'text-white border-violet-500'
+              : 'text-white/50 border-transparent'
+          }`}
+        >
+          Code
+        </button>
+      </div>
         <div className="flex items-center gap-3">
           <span className="text-[14px] font-semibold text-white/90">Virtual Contest</span>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30">Live</span>
@@ -392,8 +420,8 @@ export default function ContestArena() {
         </button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 flex flex-col border-r border-white/[0.08] bg-[#07070a]">
+    <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+        <div className={`${mobileView === 'problem' ? 'flex' : 'hidden'} md:flex md:w-1/2 flex-col flex-1 min-h-0 border-r border-white/[0.08] bg-[#07070a]`}>
           <div className="flex p-2 gap-2 border-b border-white/[0.08] bg-[#0d1117]">
             {contest.problems.map((p, idx) => {
               const isSolved = solvedProblems[p._id];
@@ -457,7 +485,7 @@ export default function ContestArena() {
           </div>
         </div>
 
-        <div className="w-1/2 flex flex-col bg-[#0d1117]">
+        <div className={`${mobileView === 'code' ? 'flex' : 'hidden'} md:flex md:w-1/2 flex-col flex-1 min-h-0 bg-[#0d1117]`}>
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08]">
             <select
               value={language}

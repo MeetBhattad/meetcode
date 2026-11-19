@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
+import { PathsSkeleton } from '../components/Skeletons';
 import axiosClient from '../utils/axiosClient';
 import { ArrowLeft, BookOpen, Target, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 
@@ -23,11 +24,7 @@ export default function Paths() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#07070a] flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-violet-500" />
-      </div>
-    );
+    return <PathsSkeleton />;
   }
 
   if (error) {

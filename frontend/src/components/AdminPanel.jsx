@@ -1,11 +1,11 @@
 import { useForm, useFieldArray } from 'react-hook-form';
+import { useToast } from '../context/ToastContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axiosClient from '../utils/axiosClient';
 import { useNavigate, NavLink } from 'react-router';
 import { ArrowLeft, Plus, Trash2, Save, Code2, AlignLeft, CheckCircle2, BookOpen } from 'lucide-react';
 
-// Zod schema matching the updated problem schema
 const problemSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -64,6 +64,7 @@ const codeAreaStyle = "w-full bg-[#0d1117] border border-white/[0.08] rounded-lg
 
 function AdminPanel() {
   const navigate = useNavigate();
+  const toast = useToast();
   const {
     register,
     control,
@@ -106,9 +107,10 @@ function AdminPanel() {
   const onSubmit = async (data) => {
     try {
       await axiosClient.post('/problem/create', data);
-      navigate('/admin'); // Redirect back to admin dashboard on success
+      toast.success('Problem created successfully');
+      navigate('/admin');
     } catch (error) {
-      alert(`Error: ${error.response?.data?.error || error.message}`);
+      toast.error(`Error: ${error.response?.data?.error || error.message}`);
     }
   };
 

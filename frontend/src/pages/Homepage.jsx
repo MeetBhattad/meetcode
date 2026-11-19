@@ -1,9 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
-import { NavLink } from 'react-router';
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { NavLink, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
+import { ProblemListSkeleton } from '../components/Skeletons';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
-import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal, TrendingUp, ArrowRight, Building2, BookOpen, Brain, Trophy} from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, LogOut, Settings, Search, SlidersHorizontal, TrendingUp, ArrowRight, Building2, BookOpen, Brain, Trophy, Sparkles, Calendar, Star, Medal, X} from 'lucide-react';
+
+
 
 const styles = `
   @keyframes fade-up {
@@ -42,6 +48,7 @@ const styles = `
 `;
 
 function Homepage() {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [problems, setProblems] = useState([]);
@@ -50,6 +57,8 @@ function Homepage() {
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+const location = useLocation();
+const lastLocationKeyRef = useRef(null);
   
  const [filters, setFilters] = useState({
   difficulty: 'all',
@@ -57,7 +66,11 @@ function Homepage() {
   status: 'all',
   company: 'all',
 });
+const [showAll, setShowAll] = useState(false);  
 const [companies, setCompanies] = useState([]);
+const [dailyProblem, setDailyProblem] = useState(null);
+const [dailySettled, setDailySettled] = useState(false);
+const [bookmarkedIds, setBookmarkedIds] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -69,41 +82,134 @@ const [companies, setCompanies] = useState([]);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const fetchProblems = async () => {
-      try {
-        const { data } = await axiosClient.get('/problem/getAllProblem');
-        setProblems(data);
-      } catch (error) {
-        console.error('Error fetching problems:', error);
-      } finally {
-        setLoading(false);
+  // ── Save scroll on every scroll + on unmount (pre-paint) ──
+  useLayoutEffect(() => {
+    const save = () => {
+      const y = window.scrollY;
+      if (y > 0) {
+        sessionStorage.setItem('meetcode:home-scroll', String(y));
       }
     };
-
-    const fetchSolvedProblems = async () => {
-      try {
-        const { data } = await axiosClient.get('/problem/problemSolvedByUser');
-        setSolvedProblems(data || []);
-      } catch (error) {
-        console.error('Error fetching solved problems:', error);
-      }
+    window.addEventListener('scroll', save, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', save);
+      save(); // capture position right before unmount, BEFORE ProblemPage's h-screen resets it
     };
+  }, []);
 
-    fetchProblems();
-    if (user) fetchSolvedProblems();
+  // ── Restore on EVERY navigation to `/` (custom link OR browser back) ──
+  // Uses location.key so popstate-driven back/forward also triggers restoration.
+  // useLayoutEffect = runs before paint → zero flash.
+  useLayoutEffect(() => {
+    if (location.pathname !== '/') return;
+    if (loading || !dailySettled) return;
+    if (lastLocationKeyRef.current === location.key) return;
+    lastLocationKeyRef.current = location.key;
 
-    const fetchCompanies = async () => {
+    const saved = sessionStorage.getItem('meetcode:home-scroll');
+    if (!saved) return;
+    const target = parseInt(saved, 10);
+    if (!target || target <= 0) return;
+
+    // Synchronous scroll — before paint, user never sees the top
+    // In the useLayoutEffect, right before window.scrollTo:
+console.log('[restore] scrolling to', target, 'from', window.scrollY, 'pageHeight', document.body.scrollHeight);
+    window.scrollTo(0, target);
+
+    // Fallback only if the DOM wasn't tall enough yet (rare with 290 problems)
+    if (Math.abs(window.scrollY - target) > 4) {
+      requestAnimationFrame(() => window.scrollTo(0, target));
+    }
+  }, [location.pathname, location.key, loading, dailySettled]);
+
+  // Problems — depends on showAll
+useEffect(() => {
+  let cancelled = false;
+  const fetchProblems = async () => {
+    setLoading(true);
     try {
-      const { data } = await axiosClient.get('/company/list');
+      const url = showAll
+        ? '/problem/getAllProblem'
+        : '/problem/getAllProblem?runnableOnly=true';
+      const { data } = await axiosClient.get(url);
+      if (!cancelled) setProblems(data);
+    } catch (error) {
+      console.error('Error fetching problems:', error);
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+  };
+  fetchProblems();
+  return () => { cancelled = true; };
+}, [showAll]);
+
+// Solved + companies — depends on user
+useEffect(() => {
+  const fetchSolvedProblems = async () => {
+    try {
+      const { data } = await axiosClient.get('/problem/problemSolvedByUser');
+      setSolvedProblems(data || []);
+    } catch (error) {
+      console.error('Error fetching solved problems:', error);
+    }
+  };
+
+  if (user) fetchSolvedProblems();
+
+   const fetchCompanies = async () => {
+    try {
+      const { data } = await axiosClient.get(`/company/list?showAll=${showAll}`);
       setCompanies(data);
     } catch (err) {
       console.error('Failed to fetch companies:', err);
     }
   };
   fetchCompanies();
+}, [user, showAll]);
 
-  }, [user]);
+// Daily problem — separate effect, sibling of the above
+// Daily problem — separate effect, sibling of the above
+useEffect(() => {
+  const fetchDaily = async () => {
+    try {
+      const { data } = await axiosClient.get('/problem/daily');
+      setDailyProblem(data);
+    } catch (err) {
+      console.error('Failed to fetch daily problem:', err);
+    } finally {
+      setDailySettled(true);
+    }
+  };
+  if (user) fetchDaily();
+  else {
+    setDailyProblem(null);
+    setDailySettled(true);
+  }
+}, [user]);
+
+// Bookmarks — depends on user
+useEffect(() => {
+  if (!user) { setBookmarkedIds([]); return; }
+  const fetch = async () => {
+    try {
+      const { data } = await axiosClient.get('/bookmark/ids');
+      setBookmarkedIds(data || []);
+    } catch (err) {
+      console.error('Failed to fetch bookmarks:', err);
+    }
+  };
+  fetch();
+}, [user]);
+
+const toggleBookmark = async (problemId) => {
+  const isBk = bookmarkedIds.includes(problemId);
+  setBookmarkedIds(prev => isBk ? prev.filter(id => id !== problemId) : [...prev, problemId]);
+  try {
+    await axiosClient.post(`/bookmark/toggle/${problemId}`);
+  } catch {
+    setBookmarkedIds(prev => isBk ? [...prev, problemId] : prev.filter(id => id !== problemId));
+  }
+};
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -166,7 +272,24 @@ const [companies, setCompanies] = useState([]);
               </div>
               <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">MeetCode</span>
             </NavLink>
-
+            
+                        <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.dispatchEvent(new Event('meetcode:open-palette'))}
+                className="hidden md:flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.04] transition-all group"
+              >
+                <Search size={13} className="text-white/40 group-hover:text-white/60 transition-colors" />
+                <span className="text-[12.5px] text-white/40 group-hover:text-white/60 transition-colors">Search</span>
+                <kbd className="ml-3 px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/40">
+                  {isMac ? '⌘K' : 'Ctrl K'}
+                </kbd>
+              </button>
+              <button
+                onClick={() => window.dispatchEvent(new Event('meetcode:open-palette'))}
+                className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/[0.04] transition-colors"
+              >
+                <Search size={16} className="text-white/60" />
+              </button>
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -185,7 +308,7 @@ const [companies, setCompanies] = useState([]);
                     <p className="text-[13px] font-medium text-white truncate">{user?.firstName} {user?.lastName}</p>
                     <p className="text-[11px] text-white/40 truncate mt-0.5">{user?.emailId}</p>
                   </div>
-                  
+
                   {user?.role === 'admin' && (
                     <NavLink 
                       to="/admin" 
@@ -210,6 +333,23 @@ const [companies, setCompanies] = useState([]);
 >
   <Trophy size={14} /> Virtual Contest
 </NavLink>
+
+<NavLink
+  to="/leaderboard"
+  onClick={() => setDropdownOpen(false)}
+  className="flex items-center gap-2 px-3 py-2 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors"
+>
+  <Trophy size={14} /> Leaderboard
+</NavLink>
+
+<NavLink
+  to="/bookmarks"
+  onClick={() => setDropdownOpen(false)}
+  className="flex items-center gap-2 px-3 py-2 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors"
+>
+  <Star size={14} /> Bookmarks
+</NavLink>
+
 <NavLink 
   to="/dashboard" 
   onClick={() => setDropdownOpen(false)}
@@ -235,16 +375,70 @@ const [companies, setCompanies] = useState([]);
               )}
             </div>
           </div>
+          </div>
         </nav>
 
         <main className="relative z-10 max-w-5xl mx-auto px-6 py-12">
           
-          <div className="fade-up mb-8" style={{ animationDelay: '0ms' }}>
+                    <div className="fade-up mb-8" style={{ animationDelay: '0ms' }}>
             <h1 className="text-2xl font-semibold tracking-[-0.02em] text-white">Problem Set</h1>
             <p className="text-[13.5px] text-white/40 mt-1">Master these patterns to ace your interviews.</p>
           </div>
 
-          <div className="fade-up flex flex-wrap items-center gap-3 mb-6" style={{ animationDelay: '80ms' }}>
+          {dailyProblem && (
+            <div
+              className="fade-up mb-6 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-violet-500/[0.03] to-transparent p-5 relative overflow-hidden"
+              style={{ animationDelay: '80ms' }}
+            >
+              <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{ background: 'radial-gradient(ellipse at top right, rgba(139,92,246,0.2), transparent 70%)' }}
+              />
+              <div className="relative flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="w-12 h-12 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center flex-shrink-0">
+                    <Sparkles size={22} className="text-violet-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] uppercase tracking-[0.12em] font-bold text-violet-400 flex items-center gap-1">
+                        <Calendar size={10} /> Daily Challenge
+                      </span>
+                      {dailyProblem.solvedToday ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                          <CheckCircle2 size={11} /> Solved
+                        </span>
+                      ) : dailyProblem.attemptsToday > 0 ? (
+                        <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                          {dailyProblem.attemptsToday} attempt{dailyProblem.attemptsToday > 1 ? 's' : ''} today
+                        </span>
+                      ) : null}
+                    </div>
+                    <h2 className="text-[16px] font-semibold text-white truncate">
+                      {dailyProblem.problem.problemNumber && (
+                        <span className="text-white/40 mr-2 font-mono text-[14px]">#{dailyProblem.problem.problemNumber}</span>
+                      )}
+                      {dailyProblem.problem.title}
+                    </h2>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border ${getDifficultyStyle(dailyProblem.problem.difficulty)}`}>
+                    {dailyProblem.problem.difficulty.charAt(0).toUpperCase() + dailyProblem.problem.difficulty.slice(1)}
+                  </span>
+                  <NavLink
+                    to={`/problem/${dailyProblem.problem._id}`}
+                    state={{ source: { type: 'daily', name: 'Daily Challenge' } }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[12.5px] font-medium transition-colors shadow-lg shadow-violet-600/20"
+                  >
+                    {dailyProblem.solvedToday ? 'Review' : 'Solve'} <ArrowRight size={13} />
+                  </NavLink>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="fade-up flex flex-wrap items-center gap-3 mb-6" style={{ animationDelay: '160ms' }}>
           <div className="relative flex-1 min-w-[200px]">
     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
     <input
@@ -266,7 +460,6 @@ const [companies, setCompanies] = useState([]);
   onChange={(e) => setFilters({...filters, status: e.target.value})}
 >
   <option value="all">All Status</option>
-  <option value="runnable">Runnable Only</option>
   <option value="solved">Solved</option>
   <option value="unsolved">Unsolved</option>
 </select>
@@ -320,6 +513,18 @@ const [companies, setCompanies] = useState([]);
               <option value="math">Math</option>
               <option value="bitManipulation">Bit Manipulation</option>
             </select>
+            <label className="flex items-center gap-2 h-9 px-3 rounded-lg bg-white/[0.02] border border-white/[0.06] cursor-pointer hover:border-white/[0.12] transition-all select-none">
+  <input
+    type="checkbox"
+    checked={showAll}
+    onChange={(e) => setShowAll(e.target.checked)}
+    className="w-4 h-4 rounded border-white/[0.15] bg-white/[0.05] text-violet-500 focus:ring-violet-500/20 focus:ring-offset-0 cursor-pointer"
+    style={{ colorScheme: 'dark' }}
+  />
+  <span className="text-[12.5px] font-medium text-white/70">
+    Show all ({showAll ? 'incl. Coming Soon' : 'runnable only'})
+  </span>
+</label>
           </div>
           {filters.company !== 'all' && (
   <div className="fade-up mb-4 flex items-center justify-between rounded-xl border border-violet-500/20 bg-violet-500/[0.06] px-4 py-3">
@@ -343,11 +548,9 @@ const [companies, setCompanies] = useState([]);
   </div>
 )}
 
-          <div className="fade-up space-y-1" style={{ animationDelay: '160ms' }}>
-            {loading ? (
-              <div className="py-20 flex justify-center">
-                <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-              </div>
+                    <div className="fade-up space-y-1" style={{ animationDelay: '240ms' }}>
+            {(loading || !dailySettled) ? (
+              <ProblemListSkeleton />
             ) : filteredProblems.length === 0 ? (
               <div className="py-20 text-center border border-white/[0.06] rounded-xl bg-white/[0.01]">
                 <Search size={24} className="mx-auto text-white/20 mb-3" />
@@ -375,11 +578,30 @@ const [companies, setCompanies] = useState([]);
   className="group flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all duration-200"
 >
                     <div className="flex items-center gap-4 min-w-0">
-                      {isSolved ? (
-                        <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
-                      ) : (
-                        <Circle size={18} className="text-white/15 flex-shrink-0 group-hover:text-white/30 transition-colors" />
-                      )}
+  <span
+    role="button"
+    tabIndex={0}
+    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBookmark(problem._id); }}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); e.stopPropagation(); toggleBookmark(problem._id);
+      }
+    }}
+    className="cursor-pointer flex-shrink-0 p-0.5 -m-0.5 rounded hover:bg-white/[0.06] transition-colors"
+    title={bookmarkedIds.includes(problem._id) ? 'Remove bookmark' : 'Bookmark'}
+  >
+    <Star
+      size={16}
+      className={bookmarkedIds.includes(problem._id)
+        ? 'fill-amber-400 text-amber-400'
+        : 'text-white/20 hover:text-white/40'}
+    />
+  </span>
+  {isSolved ? (
+    <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
+  ) : (
+    <Circle size={18} className="text-white/15 flex-shrink-0 group-hover:text-white/30 transition-colors" />
+  )}
                       <h3 className="text-[14.5px] font-medium text-white/90 group-hover:text-violet-400 transition-colors truncate">
   <span className="text-white/30 mr-2 font-mono text-[13px]">{problem.problemNumber || '---'}.</span>
   {problem.title}
@@ -409,9 +631,11 @@ const [companies, setCompanies] = useState([]);
             )}
           </div>
           
-          <div className="mt-8 text-center text-[12px] text-white/20">
-            Showing {filteredProblems.length} problem{filteredProblems.length !== 1 ? 's' : ''}
-          </div>
+          {(!loading && dailySettled) && (
+            <div className="mt-8 text-center text-[12px] text-white/20">
+              Showing {filteredProblems.length} problem{filteredProblems.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </main>
       </div>
     </>
@@ -421,15 +645,15 @@ const [companies, setCompanies] = useState([]);
 export default Homepage;
 
 function CompanyBadges({ companies = [], selectedCompany = 'all' }) {
-  const [expanded, setExpanded] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const popupRef = useRef(null);
 
   const all = (companies || []).filter((c) => c.timeframe === 'all');
   if (all.length === 0) return null;
 
-  // Sort by frequency desc
   const sorted = [...all].sort((a, b) => b.frequency - a.frequency);
-
-  // If user is filtering by a specific company, that one comes first
   const ordered =
     selectedCompany && selectedCompany !== 'all'
       ? [
@@ -438,10 +662,74 @@ function CompanyBadges({ companies = [], selectedCompany = 'all' }) {
         ]
       : sorted;
 
-  // When filtering: show selected + "+N";  when not filtering: show top 2 + "+N"
   const alwaysShow = selectedCompany !== 'all' ? 1 : 2;
-  const visible = expanded ? ordered : ordered.slice(0, alwaysShow);
-  const hidden = ordered.length - visible.length;
+  const visible = ordered.slice(0, alwaysShow);
+  const hiddenCount = ordered.length - visible.length;
+
+  // Estimate content height based on item count
+  const estimateHeight = () =>
+    Math.min(340, 40 + ordered.length * 28);
+
+  const computePos = (rect) => {
+    const popupWidth = 260;
+    const popupHeight = estimateHeight();
+    const margin = 8;
+
+    let left = rect.left;
+    if (left + popupWidth > window.innerWidth - margin) {
+      left = window.innerWidth - popupWidth - margin;
+    }
+    if (left < margin) left = margin;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    let top;
+    if (spaceBelow >= popupHeight + margin) {
+      top = rect.bottom + 6;
+    } else if (rect.top >= popupHeight + margin) {
+      top = rect.top - popupHeight - 6;
+    } else {
+      top = Math.max(margin, (window.innerHeight - popupHeight) / 2);
+    }
+
+    return { top, left };
+  };
+
+  const openPopup = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (btnRef.current) {
+      setPopupPos(computePos(btnRef.current.getBoundingClientRect()));
+    }
+    setPopupOpen(true);
+  };
+
+  useEffect(() => {
+    if (!popupOpen) return;
+
+    const handleClick = (e) => {
+      if (popupRef.current?.contains(e.target)) return;
+      if (btnRef.current?.contains(e.target)) return;
+      setPopupOpen(false);
+    };
+    const handleEsc = (e) => { if (e.key === 'Escape') setPopupOpen(false); };
+    const handleScrollOrResize = (e) => {
+      if (popupRef.current?.contains(e.target)) return;
+      if (!btnRef.current) return;
+      setPopupPos(computePos(btnRef.current.getBoundingClientRect()));
+    };
+
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleEsc);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleEsc);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [popupOpen, ordered.length]);
 
   return (
     <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
@@ -461,31 +749,61 @@ function CompanyBadges({ companies = [], selectedCompany = 'all' }) {
           </span>
         );
       })}
-      {hidden > 0 && (
+
+      {hiddenCount > 0 && (
         <button
+          ref={btnRef}
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setExpanded(true);
-          }}
+          onClick={openPopup}
           className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] hover:text-white hover:bg-white/[0.08] transition-colors"
         >
-          +{hidden}
+          +{hiddenCount}
         </button>
       )}
-      {expanded && ordered.length > alwaysShow && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setExpanded(false);
+
+      {popupOpen && createPortal(
+        <div
+          ref={popupRef}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed z-[200] rounded-xl border border-white/[0.08] bg-[#111115] shadow-2xl shadow-black/60 overflow-y-auto"
+          style={{
+            top: popupPos.top,
+            left: popupPos.left,
+            width: 260,
+            maxHeight: 340,
           }}
-          className="px-2 py-0.5 rounded-md text-[10.5px] font-medium text-white/40 hover:text-white transition-colors"
         >
-          less
-        </button>
+          <div className="sticky top-0 z-10 px-3 py-2 text-[10px] uppercase tracking-wider text-white/30 font-bold bg-[#111115] border-b border-white/[0.06] flex items-center justify-between">
+            <span>Companies · {ordered.length}</span>
+            <button
+              onClick={() => setPopupOpen(false)}
+              className="text-white/30 hover:text-white/70 p-0.5 rounded transition-colors"
+              aria-label="Close"
+            >
+              <X size={12} />
+            </button>
+          </div>
+          <div className="p-1.5 space-y-0.5">
+            {ordered.map((c) => {
+              const isSelected = c.name === selectedCompany;
+              return (
+                <div
+                  key={c.name}
+                  className={`flex items-center justify-between px-2 py-1.5 rounded-md text-[11.5px] ${
+                    isSelected ? 'bg-violet-500/20 text-violet-200' : 'text-white/70'
+                  }`}
+                >
+                  <span className="truncate">{c.name}</span>
+                  <span className="text-[10px] text-white/30 font-mono ml-2 flex-shrink-0">
+                    {c.frequency.toFixed(0)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

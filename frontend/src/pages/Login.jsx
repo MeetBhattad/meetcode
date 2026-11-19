@@ -3,9 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { loginUser } from "../authSlice";
+import { loginUser, googleLogin } from "../authSlice";
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const loginSchema = z.object({
   emailId: z.string().email("Invalid Email"),
@@ -47,12 +48,15 @@ const styles = `
   }
 `;
 
+
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const spotlightRef = useRef(null);
   const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+
+  
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema)
@@ -74,6 +78,14 @@ function Login() {
   }, []);
 
   const onSubmit = (data) => dispatch(loginUser(data));
+
+  const handleGoogleSuccess = (credentialResponse) => {
+  dispatch(googleLogin(credentialResponse.credential));
+};
+
+const handleGoogleError = () => {
+  console.error('Google Login Failed');
+};
 
   return (
     <>
@@ -260,9 +272,31 @@ function Login() {
             </div>
           </form>
 
+          {/* Divider */}
+          <div className="fade-in relative my-6" style={{ animationDelay: '400ms' }}>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/[0.07]"></div>
+            </div>
+            <div className="relative flex justify-center text-[11px]">
+              <span className="bg-[#07070a] px-3 text-white/30 tracking-wider">OR</span>
+            </div>
+          </div>
+
+          {/* Google Login */}
+          <div className="fade-in flex justify-center" style={{ animationDelay: '480ms' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="filled_black"
+              shape="pill"
+              width="312"
+              text="continue_with"
+            />
+          </div>
+
           {/* Sign up */}
           <p
-            className="fade-in mt-12 text-center text-[13px] text-white/30"
+            className="fade-in mt-10 text-center text-[13px] text-white/30"
             style={{ animationDelay: '600ms' }}
           >
             New to MeetCode?{' '}

@@ -1,23 +1,51 @@
+/* eslint-disable no-empty */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import axiosClient from "../utils/axiosClient";
+import AIReviewPanel from "./AIReviewPanel";
+import {
+  CheckCircle2, XCircle, AlertCircle, Clock, Loader2,
+  Code2, Sparkles, Copy, Check, X,
+} from "lucide-react";
 
-const SubmissionHistory = ({ problemId }) => {
+const STATUS_MAP = {
+  accepted: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/25", label: "Accepted" },
+  wrong:    { icon: XCircle,      color: "text-rose-400",    bg: "bg-rose-500/15 border-rose-500/25",       label: "Wrong Answer" },
+  error:    { icon: AlertCircle,  color: "text-amber-400",   bg: "bg-amber-500/15 border-amber-500/25",     label: "Error" },
+  pending:  { icon: Clock,        color: "text-sky-400",     bg: "bg-sky-500/15 border-sky-500/25",         label: "Pending" },
+};
+
+const LANG_LABEL = { python: "Python", java: "Java", cpp: "C++", "c++": "C++" };
+
+const formatMemory = (kb) => {
+  if (!kb && kb !== 0) return "—";
+  if (kb < 1024) return `${kb} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
+};
+
+const timeAgo = (dateStr) => {
+  const d = new Date(dateStr);
+  const diffMin = Math.floor((Date.now() - d) / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
+  return d.toLocaleDateString("en", { month: "short", day: "numeric" });
+};
+
+export default function SubmissionHistory({ problemId }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [tab, setTab] = useState("code");
   const [copied, setCopied] = useState(false);
 
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axiosClient.get(
-        `/problem/submittedProblem/${problemId}`
-      );
-      // Guard against legacy string responses
-      setSubmissions(Array.isArray(response.data) ? response.data : []);
+      const { data } = await axiosClient.get(`/problem/submittedProblem/${problemId}`);
+      setSubmissions(Array.isArray(data) ? data : []);
     } catch (err) {
       setError("Failed to fetch submission history");
       console.error(err);
@@ -26,294 +54,268 @@ const SubmissionHistory = ({ problemId }) => {
     }
   };
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, [problemId]);
+  useEffect(() => { fetchSubmissions(); }, [problemId]);
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "accepted":
-        return { badge: "badge-success", label: "Accepted" };
-      case "wrong":
-        return { badge: "badge-error", label: "Wrong Answer" };
-      case "error":
-        return { badge: "badge-warning", label: "Error" };
-      case "pending":
-        return { badge: "badge-info", label: "Pending" };
-      default:
-        return { badge: "badge-neutral", label: status };
-    }
-  };
-
-  const formatMemory = (kb) => {
-    if (!kb && kb !== 0) return "—";
-    if (kb < 1024) return `${kb} KB`;
-    return `${(kb / 1024).toFixed(2)} MB`;
-  };
-
-  const formatDate = (dateString) => {
-    const d = new Date(dateString);
-    const now = new Date();
-    const diffMin = Math.floor((now - d) / 60000);
-    if (diffMin < 1) return "just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
-    return d.toLocaleString();
+  const openSubmission = (sub, openTab = "code") => {
+    setSelected(sub);
+    setTab(openTab);
+    setCopied(false);
   };
 
   const copyCode = async () => {
-    if (!selectedSubmission) return;
+    if (!selected) return;
     try {
-      await navigator.clipboard.writeText(selectedSubmission.code);
+      await navigator.clipboard.writeText(selected.code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch (err) {
-      console.error("Copy failed", err);
-    }
+    } catch {}
   };
 
-  // ── Derived stats ────────────────────────────────────────────
+  const handleReviewComplete = (review) => {
+    setSelected(prev => prev ? { ...prev, aiReview: review } : prev);
+    setSubmissions(prev => prev.map(s => s._id === selected?._id ? { ...s, aiReview: review } : s));
+  };
+
   const total = submissions.length;
-  const acceptedCount = submissions.filter((s) => s.status === "accepted").length;
-  const failedCount = submissions.filter(
-    (s) => s.status === "wrong" || s.status === "error"
-  ).length;
+  const acceptedCount = submissions.filter(s => s.status === "accepted").length;
+  const failedCount = submissions.filter(s => s.status === "wrong" || s.status === "error").length;
   const accuracy = total > 0 ? Math.round((acceptedCount / total) * 100) : 0;
 
-  // ── Loading ─────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
+      <div className="flex justify-center items-center h-40">
+        <Loader2 size={24} className="animate-spin text-violet-500" />
       </div>
     );
   }
 
-  // ── Error ───────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="alert alert-error shadow-lg my-4">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="stroke-current flex-shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{error}</span>
-        <button className="btn btn-sm btn-ghost" onClick={fetchSubmissions}>
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[13px] text-rose-300">
+          <AlertCircle size={16} /> {error}
+        </div>
+        <button onClick={fetchSubmissions} className="text-[12px] text-rose-400 hover:text-rose-300 underline">
           Retry
         </button>
       </div>
     );
   }
 
-  // ── Empty state ─────────────────────────────────────────────
   if (submissions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
-        <div className="rounded-full bg-base-200 p-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 text-base-content/50"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <div className="w-14 h-14 rounded-full bg-white/[0.04] flex items-center justify-center">
+          <Code2 size={24} className="text-white/30" />
         </div>
-        <h3 className="text-lg font-semibold">No submissions yet</h3>
-        <p className="text-sm text-base-content/60 max-w-xs">
-          Submit your solution to see it appear here with runtime, memory, and
-          full code.
+        <h3 className="text-[15px] font-semibold text-white">No submissions yet</h3>
+        <p className="text-[12.5px] text-white/40 max-w-xs">
+          Submit your first solution to see your history and get AI-powered feedback.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      {/* ── Stats ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total" value={total} color="text-base-content" />
-        <StatCard label="Accepted" value={acceptedCount} color="text-success" />
-        <StatCard label="Failed" value={failedCount} color="text-error" />
-        <StatCard label="Accuracy" value={`${accuracy}%`} color="text-primary" />
+    <div className="space-y-4">
+      {/* Compact stats bar */}
+      <div className="grid grid-cols-4 gap-2">
+        <MiniStat label="Total" value={total} />
+        <MiniStat label="Accepted" value={acceptedCount} color="text-emerald-400" />
+        <MiniStat label="Failed" value={failedCount} color="text-rose-400" />
+        <MiniStat label="Accuracy" value={`${accuracy}%`} color="text-violet-400" />
       </div>
 
-      {/* ── Table ──────────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-lg border border-base-300">
-        <table className="table table-zebra w-full">
-          <thead className="bg-base-200">
-            <tr>
-              <th className="w-12">#</th>
-              <th>Language</th>
-              <th>Status</th>
-              <th>Runtime</th>
-              <th>Memory</th>
-              <th>Tests</th>
-              <th>Submitted</th>
-              <th className="w-24">Code</th>
-            </tr>
-          </thead>
-          <tbody>
-            {submissions.map((sub, index) => {
-              const { badge, label } = getStatusStyle(sub.status);
-              return (
-                <tr key={sub._id} className="hover">
-                  <td className="text-base-content/60">{index + 1}</td>
-                  <td>
-                    <span className="badge badge-outline font-mono text-xs">
-                      {sub.language}
+      {/* Submission cards */}
+      <div className="space-y-2">
+        {submissions.map((sub, i) => {
+          const style = STATUS_MAP[sub.status] || STATUS_MAP.pending;
+          const Icon = style.icon;
+          const hasReview = !!sub.aiReview;
+          const isAccepted = sub.status === "accepted";
+
+          return (
+            <div
+              key={sub._id}
+              className="group rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.12] transition-all p-3.5"
+            >
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
+                {/* Left: index + status icon */}
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <span className="text-[11px] text-white/25 font-mono w-5">#{i + 1}</span>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${style.bg}`}>
+                    <Icon size={16} className={style.color} />
+                  </div>
+                </div>
+
+                {/* Middle: language, status, meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <span className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[10px] font-mono font-medium text-white/60 uppercase tracking-wide">
+                      {LANG_LABEL[sub.language] || sub.language}
                     </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${badge} badge-sm gap-1`}>
-                      {sub.status === "accepted" && "✓"}
-                      {sub.status === "wrong" && "✗"}
-                      {sub.status === "error" && "!"}
-                      {label}
+                    <span className={`text-[11.5px] font-semibold ${style.color}`}>{style.label}</span>
+                    {hasReview && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-500/15 border border-violet-500/25 text-[10px] text-violet-300 font-medium">
+                        <Sparkles size={9} /> AI Reviewed
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-[11.5px] text-white/40 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} /> {sub.runtime?.toFixed(3) ?? "—"}s
                     </span>
-                  </td>
-                  <td className="font-mono text-sm">
-                    {sub.runtime ? `${sub.runtime.toFixed(3)}s` : "—"}
-                  </td>
-                  <td className="font-mono text-sm">{formatMemory(sub.memory)}</td>
-                  <td className="font-mono text-sm">
-                    {sub.testCasesPassed}/{sub.testCasesTotal}
-                  </td>
-                  <td className="text-sm text-base-content/70">
-                    {formatDate(sub.createdAt)}
-                  </td>
-                  <td>
+                    <span>{formatMemory(sub.memory)}</span>
+                    <span>{sub.testCasesPassed}/{sub.testCasesTotal} tests</span>
+                    <span>{timeAgo(sub.createdAt)}</span>
+                  </div>
+                </div>
+
+                {/* Right: actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0">
+                  <button
+                    onClick={() => openSubmission(sub, "code")}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white text-[11.5px] font-medium transition-colors"
+                  >
+                    <Code2 size={12} />
+                    <span className="hidden sm:inline">View</span>
+                  </button>
+                  {isAccepted && (
                     <button
-                      className="btn btn-xs btn-outline btn-primary"
-                      onClick={() => {
-                        setSelectedSubmission(sub);
-                        setCopied(false);
-                      }}
+                      onClick={() => openSubmission(sub, "ai")}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors ${
+                        hasReview
+                          ? "bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-500/30"
+                          : "bg-violet-600 hover:bg-violet-500 text-white"
+                      }`}
                     >
-                      View
+                      <Sparkles size={12} />
+                      <span className="hidden sm:inline">{hasReview ? "Review" : "AI Review"}</span>
                     </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <p className="mt-3 text-xs text-base-content/50">
-        Showing {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
-      </p>
-
-      {/* ── Modal ──────────────────────────────────────────────── */}
-      {selectedSubmission && (
+      {/* Modal */}
+      {selected && (
         <div
-          className="modal modal-open"
-          onClick={() => setSelectedSubmission(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setSelected(null)}
         >
           <div
-            className="modal-box w-11/12 max-w-5xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/[0.08] bg-[#0d1117] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-lg">
-                  Submission #{submissions.findIndex((s) => s._id === selectedSubmission._id) + 1}
-                </h3>
-                <p className="text-sm text-base-content/60 font-mono">
-                  {selectedSubmission.language} · {formatDate(selectedSubmission.createdAt)}
+            <div className="flex items-start justify-between px-5 py-3.5 border-b border-white/[0.08]">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h3 className="text-[15px] font-semibold text-white">
+                    Submission #{submissions.findIndex(s => s._id === selected._id) + 1}
+                  </h3>
+                  <span className={`text-[11px] font-semibold ${STATUS_MAP[selected.status]?.color}`}>
+                    {STATUS_MAP[selected.status]?.label}
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-white/40 font-mono">
+                  {LANG_LABEL[selected.language]} · {timeAgo(selected.createdAt)}
                 </p>
               </div>
               <button
-                className="btn btn-sm btn-circle btn-ghost"
-                onClick={() => setSelectedSubmission(null)}
+                onClick={() => setSelected(null)}
+                className="text-white/40 hover:text-white p-1.5 rounded hover:bg-white/[0.06] transition-colors"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            {/* Status badges row */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {(() => {
-                const { badge, label } = getStatusStyle(selectedSubmission.status);
-                return <span className={`badge ${badge}`}>{label}</span>;
-              })()}
-              <span className="badge badge-outline">
-                Runtime: {selectedSubmission.runtime?.toFixed(3) ?? "—"}s
-              </span>
-              <span className="badge badge-outline">
-                Memory: {formatMemory(selectedSubmission.memory)}
-              </span>
-              <span className="badge badge-outline">
-                Tests: {selectedSubmission.testCasesPassed}/
-                {selectedSubmission.testCasesTotal}
-              </span>
-            </div>
-
-            {/* Error message */}
-            {selectedSubmission.errorMessage && (
-              <div className="alert alert-error mb-4">
-                <div>
-                  <p className="font-semibold text-sm mb-1">Error</p>
-                  <pre className="text-xs whitespace-pre-wrap font-mono">
-                    {selectedSubmission.errorMessage}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {/* Code block */}
-            <div className="flex-1 min-h-0 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold">Code</span>
-                <button
-                  className="btn btn-xs btn-ghost"
-                  onClick={copyCode}
-                  disabled={copied}
-                >
-                  {copied ? "✓ Copied" : "Copy"}
-                </button>
-              </div>
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs font-mono">
-                <code>{selectedSubmission.code}</code>
-              </pre>
-            </div>
-
-            <div className="modal-action">
+            {/* Tabs */}
+            <div className="flex border-b border-white/[0.08] px-3">
               <button
-                className="btn btn-sm"
-                onClick={() => setSelectedSubmission(null)}
+                onClick={() => setTab("code")}
+                className={`px-3 py-2.5 text-[12.5px] font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+                  tab === "code"
+                    ? "text-white border-violet-500"
+                    : "text-white/50 border-transparent hover:text-white/80"
+                }`}
               >
-                Close
+                <Code2 size={13} /> Code
               </button>
+              {selected.status === "accepted" && (
+                <button
+                  onClick={() => setTab("ai")}
+                  className={`px-3 py-2.5 text-[12.5px] font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+                    tab === "ai"
+                      ? "text-white border-violet-500"
+                      : "text-white/50 border-transparent hover:text-white/80"
+                  }`}
+                >
+                  <Sparkles size={13} /> AI Review
+                  {selected.aiReview && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {tab === "code" ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-white/40 uppercase tracking-wide font-semibold">
+                      Source
+                    </span>
+                    <button
+                      onClick={copyCode}
+                      className="flex items-center gap-1.5 text-[11.5px] text-white/50 hover:text-white transition-colors"
+                    >
+                      {copied ? (
+                        <><Check size={11} className="text-emerald-400" /> Copied</>
+                      ) : (
+                        <><Copy size={11} /> Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="bg-[#0a0c10] border border-white/[0.06] rounded-lg p-4 overflow-x-auto text-[12px] font-mono text-white/85 leading-relaxed">
+                    <code>{selected.code}</code>
+                  </pre>
+
+                  {selected.errorMessage && (
+                    <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3">
+                      <p className="text-[11px] font-semibold text-rose-400 uppercase tracking-wide mb-1">
+                        Error
+                      </p>
+                      <pre className="text-[11px] text-rose-200 whitespace-pre-wrap font-mono">
+                        {selected.errorMessage}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <AIReviewPanel
+                  submissionId={selected._id}
+                  initialReview={selected.aiReview}
+                  onReviewComplete={handleReviewComplete}
+                />
+              )}
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
+}
 
-const StatCard = ({ label, value, color }) => (
-  <div className="stat bg-base-200 rounded-lg p-3">
-    <div className="stat-title text-xs">{label}</div>
-    <div className={`stat-value text-2xl ${color}`}>{value}</div>
-  </div>
-);
-
-export default SubmissionHistory;
+function MiniStat({ label, value, color = "text-white" }) {
+  return (
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+      <div className="text-[9.5px] text-white/40 uppercase tracking-wider font-medium">{label}</div>
+      <div className={`text-[16px] font-bold ${color} leading-tight mt-0.5`}>{value}</div>
+    </div>
+  );
+}
